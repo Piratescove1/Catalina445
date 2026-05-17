@@ -30,19 +30,24 @@ export default function App() {
     importData,
   } = useInventory()
 
-  const { maintenance, addEntry, updateEntry, deleteEntry, importMaintenance } = useMaintenance()
+  const {
+    maintenance, addEntry, updateEntry, deleteEntry,
+    futureProjects, addProject, updateProject, deleteProject,
+    addPart, togglePart, deletePart,
+    importMaintenance,
+  } = useMaintenance()
 
-  const onRemoteData = useCallback((inv, voy, maint) => {
+  const onRemoteData = useCallback((inv, voy, maint, future) => {
     importData(inv, voy)
-    if (maint) importMaintenance(maint)
+    importMaintenance(maint, future)
   }, [importData, importMaintenance])
 
-  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, maintenance, onRemoteData })
+  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, maintenance, futureProjects, onRemoteData })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance)
-  }, [inventory, voyages, maintenance])
+    push(inventory, voyages, maintenance, futureProjects)
+  }, [inventory, voyages, maintenance, futureProjects])
 
   return (
     <div className="app">
@@ -111,6 +116,13 @@ export default function App() {
           addEntry={addEntry}
           updateEntry={updateEntry}
           deleteEntry={deleteEntry}
+          futureProjects={futureProjects}
+          addProject={addProject}
+          updateProject={updateProject}
+          deleteProject={deleteProject}
+          addPart={addPart}
+          togglePart={togglePart}
+          deletePart={deletePart}
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />

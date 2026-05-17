@@ -266,6 +266,138 @@ html, body, #root {
   margin-top: 14px;
 }
 
+/* ── Maintenance tabs ──────────────────────────────────── */
+.maint-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--navy-light);
+  margin: 0 16px 0;
+}
+
+.maint-tab {
+  flex: 1;
+  padding: 10px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--cream-dim);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.maint-tab--active {
+  color: var(--brass);
+  border-bottom-color: var(--brass);
+}
+
+/* ── Future projects ───────────────────────────────────── */
+.future-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--navy-dark);
+  border: 1px solid var(--navy-light);
+  color: var(--cream-dim);
+  letter-spacing: 0.04em;
+}
+
+.future-badge--ready {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #86efac;
+}
+
+.parts-list-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 7px 12px;
+  background: var(--navy-dark);
+  border: 1px solid var(--brass);
+  border-radius: 8px;
+  color: var(--brass);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.parts-badge {
+  font-size: 0.75rem;
+  color: var(--cream-dim);
+  font-weight: 400;
+}
+
+/* Parts dialog */
+.dialog--wide { max-width: 480px; }
+
+.parts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.part-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--navy-dark);
+  border-radius: 8px;
+  border: 1px solid var(--navy-light);
+}
+
+.part-row--checked { opacity: 0.6; }
+.part-row--checked .part-name { text-decoration: line-through; }
+
+.part-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--navy-light);
+  background: none;
+  color: #22c55e;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.part-check--on {
+  background: #14532d;
+  border-color: #22c55e;
+}
+
+.part-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--cream);
+}
+
+.part-delete {
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.parts-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 /* ── Reconnect dialog ──────────────────────────────────── */
 .dialog-overlay {
   position: fixed;
