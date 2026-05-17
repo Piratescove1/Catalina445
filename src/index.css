@@ -398,6 +398,32 @@ html, body, #root {
   margin-top: 4px;
 }
 
+.parts-inline {
+  margin-top: 12px;
+  border-top: 1px solid var(--navy-light);
+  padding-top: 12px;
+}
+
+.parts-inline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.parts-inline-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.parts-empty {
+  font-size: 0.8rem;
+  color: var(--cream-dim);
+  text-align: center;
+  padding: 8px 0;
+}
+
 /* ── Reconnect dialog ──────────────────────────────────── */
 .dialog-overlay {
   position: fixed;

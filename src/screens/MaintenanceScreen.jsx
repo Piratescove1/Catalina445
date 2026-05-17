@@ -103,10 +103,12 @@ function EntryForm({ initial, onSave, onCancel }) {
 
 // ── Future projects components ───────────────────────────
 
-function PartsDialog({ project, onAddPart, onTogglePart, onDeletePart, onClose }) {
+function ProjectCard({ project, onEdit, onDelete, onAddPart, onTogglePart, onDeletePart }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [newPart, setNewPart] = useState('')
-  const checked   = project.parts.filter(p => p.checked).length
-  const total     = project.parts.length
+  const checked = project.parts.filter(p => p.checked).length
+  const total   = project.parts.length
+  const allDone = total > 0 && checked === total
 
   const handleAdd = () => {
     const name = newPart.trim()
@@ -116,20 +118,40 @@ function PartsDialog({ project, onAddPart, onTogglePart, onDeletePart, onClose }
   }
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog dialog--wide">
-        <p className="dialog-title">🛒 Parts List</p>
-        <p className="dialog-body" style={{ marginBottom: 4 }}>{project.projectName}</p>
-        {total > 0 && (
-          <p className="dialog-body dialog-body--dim" style={{ marginBottom: 12 }}>
-            {checked} of {total} on hand
-          </p>
-        )}
+    <div className="maint-card">
+      <div className="maint-card-header">
+        <span className={`future-badge ${allDone ? 'future-badge--ready' : ''}`}>
+          {allDone ? '✓ Ready' : 'Planned'}
+        </span>
+        <div className="maint-card-actions">
+          <button className="maint-action-btn" onClick={onEdit}>Edit</button>
+          <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
+        </div>
+      </div>
 
-        {/* Parts checklist */}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Future Project?"
+          body={`Delete "${project.projectName}"? This cannot be undone.`}
+          confirmLabel="Yes, delete project"
+          onConfirm={() => { setConfirmDelete(false); onDelete() }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+
+      <p className="maint-project-name">{project.projectName}</p>
+      {project.description && <p className="maint-notes">{project.description}</p>}
+
+      {/* Inline parts list */}
+      <div className="parts-inline">
+        <div className="parts-inline-header">
+          <span className="parts-inline-title">🛒 Parts List</span>
+          {total > 0 && <span className="parts-badge">{checked}/{total} on hand</span>}
+        </div>
+
         <div className="parts-list">
           {project.parts.length === 0 && (
-            <p className="maint-notes" style={{ textAlign: 'center', padding: '12px 0' }}>No parts added yet.</p>
+            <p className="parts-empty">No parts added yet.</p>
           )}
           {project.parts.map(part => (
             <div key={part.id} className={`part-row ${part.checked ? 'part-row--checked' : ''}`}>
@@ -146,7 +168,6 @@ function PartsDialog({ project, onAddPart, onTogglePart, onDeletePart, onClose }
           ))}
         </div>
 
-        {/* Add new part */}
         <div className="parts-add-row">
           <input
             className="add-input add-input--name"
@@ -157,59 +178,7 @@ function PartsDialog({ project, onAddPart, onTogglePart, onDeletePart, onClose }
           />
           <button className="add-btn" onClick={handleAdd}>Add</button>
         </div>
-
-        <div className="dialog-btns" style={{ marginTop: 16 }}>
-          <button className="dialog-btn" onClick={onClose}>Done</button>
-        </div>
       </div>
-    </div>
-  )
-}
-
-function ProjectCard({ project, onEdit, onDelete, onOpenParts, onAddPart, onTogglePart, onDeletePart }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [showParts, setShowParts] = useState(false)
-  const checked = project.parts.filter(p => p.checked).length
-  const total   = project.parts.length
-  const allDone = total > 0 && checked === total
-
-  return (
-    <div className="maint-card">
-      <div className="maint-card-header">
-        <span className={`future-badge ${allDone ? 'future-badge--ready' : ''}`}>
-          {allDone ? '✓ Ready' : 'Planned'}
-        </span>
-        <div className="maint-card-actions">
-          <button className="maint-action-btn" onClick={onEdit}>Edit</button>
-          <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
-        </div>
-      </div>
-      {confirmDelete && (
-        <ConfirmDialog
-          title="Delete Future Project?"
-          body={`Delete "${project.projectName}"? This cannot be undone.`}
-          confirmLabel="Yes, delete project"
-          onConfirm={() => { setConfirmDelete(false); onDelete() }}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
-      <p className="maint-project-name">{project.projectName}</p>
-      {project.description && <p className="maint-notes">{project.description}</p>}
-
-      <button className="parts-list-btn" onClick={() => setShowParts(true)}>
-        🛒 Parts List
-        {total > 0 && <span className="parts-badge">{checked}/{total} on hand</span>}
-      </button>
-
-      {showParts && (
-        <PartsDialog
-          project={project}
-          onAddPart={onAddPart}
-          onTogglePart={onTogglePart}
-          onDeletePart={onDeletePart}
-          onClose={() => setShowParts(false)}
-        />
-      )}
     </div>
   )
 }
