@@ -18,6 +18,7 @@ export default function App() {
   const [screen, setScreen] = useState('inventory')
   const [showSync, setShowSync] = useState(false)
   const [joinInput, setJoinInput] = useState('')
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const {
     inventory, voyages, activeVoyage,
@@ -31,7 +32,7 @@ export default function App() {
     importData(inv, voy)
   }, [importData])
 
-  const { status, boatId, push } = useSync({ inventory, voyages, onRemoteData })
+  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, onRemoteData })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
@@ -99,6 +100,41 @@ export default function App() {
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />
+
+      {/* Reconnect dialog — step 1 */}
+      {pendingSync && !showConfirm && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <p className="dialog-title">Reconnected with Unsynced Changes</p>
+            <p className="dialog-body">
+              You made changes while offline. Do you want to overwrite the shared database with your offline changes?
+            </p>
+            <p className="dialog-body dialog-body--dim">
+              Selecting <strong>No</strong> will discard your offline changes and restore the shared database version.
+            </p>
+            <div className="dialog-btns">
+              <button className="dialog-btn dialog-btn--danger" onClick={() => setShowConfirm(true)}>Yes, overwrite database</button>
+              <button className="dialog-btn" onClick={() => resolveSync(false)}>No, restore database version</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reconnect dialog — step 2 (confirmation) */}
+      {pendingSync && showConfirm && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <p className="dialog-title">Are you sure?</p>
+            <p className="dialog-body">
+              This will permanently overwrite the shared database with your offline changes. All other devices will receive your version on next sync.
+            </p>
+            <div className="dialog-btns">
+              <button className="dialog-btn dialog-btn--danger" onClick={() => { setShowConfirm(false); resolveSync(true) }}>Yes, overwrite</button>
+              <button className="dialog-btn" onClick={() => { setShowConfirm(false); resolveSync(false) }}>No, restore database version</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -12,10 +12,14 @@
  * Writes are debounced 1.5s so rapid changes (e.g. voice commands) don't
  * hammer Firestore with one write per keystroke.
  *
+ * Offline handling: if the device goes offline and the user makes changes,
+ * those changes are held in pendingData. When the device reconnects, the user
+ * is asked whether to push their local changes or pull the server version.
+ *
  * Status values: 'connecting' | 'syncing' | 'synced' | 'offline' | 'unconfigured'
  */
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore'
 import { db, configured } from '../lib/firebase'
 
 const BOAT_ID_KEY = 'c445-boat-id'
@@ -36,16 +40,28 @@ export function joinBoat(id) {
 }
 
 export function useSync({ inventory, voyages, onRemoteData }) {
-  const [status, setStatus]   = useState(configured ? 'connecting' : 'unconfigured')
-  const [boatId]              = useState(getBoatId)
-  const ignoreNext            = useRef(false)
-  const pushTimer             = useRef(null)
+  const [status, setStatus]       = useState(configured ? 'connecting' : 'unconfigured')
+  const [pendingSync, setPendingSync] = useState(false) // true = reconnected with unsynced changes
+  const [boatId]                  = useState(getBoatId)
+  const ignoreNext                = useRef(false)
+  const pushTimer                 = useRef(null)
+  const offlineDirty              = useRef(false) // true if changes were made while offline
+  const pendingData               = useRef(null)  // latest { inv, voy } changed while offline
 
-  // Instantly reflect browser online/offline events (fires immediately on iOS when WiFi drops)
+  // Instantly reflect browser online/offline events
   useEffect(() => {
     if (!configured) return
-    const goOffline = () => setStatus('offline')
-    const goOnline  = () => setStatus('connecting')
+    const goOffline = () => {
+      setStatus('offline')
+    }
+    const goOnline = () => {
+      if (offlineDirty.current) {
+        // User made changes while offline — ask before syncing
+        setPendingSync(true)
+      } else {
+        setStatus('connecting')
+      }
+    }
     window.addEventListener('offline', goOffline)
     window.addEventListener('online',  goOnline)
     return () => {
@@ -74,11 +90,21 @@ export function useSync({ inventory, voyages, onRemoteData }) {
     return unsub
   }, [boatId, onRemoteData])
 
-  // Debounced push — waits 1.5s after last change before writing
+  // Debounced push — skips if offline (tracks dirty state instead)
   const push = useCallback((inv, voy) => {
-    if (!configured || !db || ignoreNext.current) return
+    if (!configured || !db || ignoreNext.current || pendingSync) return
+    if (!navigator.onLine) {
+      offlineDirty.current = true
+      pendingData.current = { inv, voy }
+      return
+    }
     clearTimeout(pushTimer.current)
     pushTimer.current = setTimeout(async () => {
+      if (!navigator.onLine) {
+        offlineDirty.current = true
+        pendingData.current = { inv, voy }
+        return
+      }
       setStatus('syncing')
       try {
         await setDoc(doc(db, 'boats', boatId), {
@@ -92,7 +118,43 @@ export function useSync({ inventory, voyages, onRemoteData }) {
         setStatus('offline')
       }
     }, 1500)
-  }, [boatId])
+  }, [boatId, pendingSync])
 
-  return { status, boatId, push }
+  // Called from App when user responds to the reconnect dialog
+  const resolveSync = useCallback(async (keepLocal) => {
+    setPendingSync(false)
+    offlineDirty.current = false
+    if (keepLocal && pendingData.current) {
+      const { inv, voy } = pendingData.current
+      setStatus('syncing')
+      try {
+        await setDoc(doc(db, 'boats', boatId), {
+          inventory: inv,
+          voyages: voy,
+          deviceId: DEVICE_ID,
+          updatedAt: Date.now(),
+        })
+        setStatus('synced')
+      } catch {
+        setStatus('offline')
+      }
+    } else {
+      setStatus('connecting')
+      try {
+        const snap = await getDoc(doc(db, 'boats', boatId))
+        if (snap.exists()) {
+          const data = snap.data()
+          ignoreNext.current = true
+          onRemoteData(data.inventory, data.voyages)
+          setTimeout(() => { ignoreNext.current = false }, 1000)
+        }
+        setStatus('synced')
+      } catch {
+        setStatus('offline')
+      }
+    }
+    pendingData.current = null
+  }, [boatId, onRemoteData])
+
+  return { status, boatId, push, pendingSync, resolveSync }
 }

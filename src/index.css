@@ -172,6 +172,67 @@ html, body, #root {
   width: 100%;
 }
 
+/* ── Reconnect dialog ──────────────────────────────────── */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dialog {
+  background: var(--navy-mid);
+  border: 1px solid var(--brass);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.dialog-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brass);
+  margin-bottom: 12px;
+}
+
+.dialog-body {
+  font-size: 0.9rem;
+  color: var(--cream);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.dialog-body--dim { color: var(--cream-dim); }
+
+.dialog-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.dialog-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--navy-light);
+  background: var(--navy-dark);
+  color: var(--cream);
+}
+
+.dialog-btn--danger {
+  background: #b91c1c;
+  border-color: #ef4444;
+  color: #fff;
+}
+
 /* Push screen content down to account for sync bar */
 .screen { padding-top: calc(var(--nav-h) + 28px) }
 
