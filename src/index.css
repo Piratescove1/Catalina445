@@ -172,6 +172,100 @@ html, body, #root {
   width: 100%;
 }
 
+/* ── Maintenance log ───────────────────────────────────── */
+.maint-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.maint-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.maint-date {
+  font-size: 0.78rem;
+  color: var(--brass);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.maint-card-actions { display: flex; gap: 8px; }
+
+.maint-action-btn {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--navy-light);
+  background: var(--navy-dark);
+  color: var(--cream-dim);
+  cursor: pointer;
+}
+
+.maint-action-btn--danger { color: #f87171; border-color: #f87171; }
+
+.maint-project-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cream);
+  margin-bottom: 8px;
+}
+
+.maint-field {
+  display: flex;
+  gap: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.maint-label { color: var(--cream-dim); min-width: 70px; }
+.maint-value { color: var(--cream); }
+
+.maint-notes {
+  font-size: 0.85rem;
+  color: var(--cream-dim);
+  margin-top: 8px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.maint-form {
+  background: var(--navy-mid);
+  border: 1px solid var(--brass);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.maint-form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.maint-form-row--col { flex-direction: column; align-items: stretch; }
+
+.maint-form-label {
+  font-size: 0.8rem;
+  color: var(--cream-dim);
+  min-width: 130px;
+}
+
+.maint-form-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 /* ── Reconnect dialog ──────────────────────────────────── */
 .dialog-overlay {
   position: fixed;

@@ -21,6 +21,16 @@ export default function NavBar({ active, onNavigate }) {
         <span className="nav-label">Voyage Log</span>
         <span className="nav-sublabel">Log & GPS</span>
       </button>
+      <button
+        className={`nav-btn ${active === 'maintenance' ? 'nav-btn--active' : ''}`}
+        onClick={() => onNavigate('maintenance')}
+        aria-label="Maintenance log screen"
+      >
+        {active === 'maintenance' && <span className="nav-indicator" />}
+        <span className="nav-icon">🔧</span>
+        <span className="nav-label">Maintenance</span>
+        <span className="nav-sublabel">Service Log</span>
+      </button>
     </nav>
   )
 }

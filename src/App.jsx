@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useInventory } from './hooks/useInventory'
+import { useMaintenance } from './hooks/useMaintenance'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
+import MaintenanceScreen from './screens/MaintenanceScreen'
 import NavBar from './components/NavBar'
 import './index.css'
 
@@ -28,16 +30,19 @@ export default function App() {
     importData,
   } = useInventory()
 
-  const onRemoteData = useCallback((inv, voy) => {
-    importData(inv, voy)
-  }, [importData])
+  const { maintenance, addEntry, updateEntry, deleteEntry, importMaintenance } = useMaintenance()
 
-  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, onRemoteData })
+  const onRemoteData = useCallback((inv, voy, maint) => {
+    importData(inv, voy)
+    if (maint) importMaintenance(maint)
+  }, [importData, importMaintenance])
+
+  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, maintenance, onRemoteData })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages)
-  }, [inventory, voyages])
+    push(inventory, voyages, maintenance)
+  }, [inventory, voyages, maintenance])
 
   return (
     <div className="app">
@@ -97,6 +102,14 @@ export default function App() {
           addVoyageNote={addVoyageNote}
           addLogEntry={addLogEntry}
           updateLogEntry={updateLogEntry}
+        />
+      )}
+      {screen === 'maintenance' && (
+        <MaintenanceScreen
+          maintenance={maintenance}
+          addEntry={addEntry}
+          updateEntry={updateEntry}
+          deleteEntry={deleteEntry}
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />
