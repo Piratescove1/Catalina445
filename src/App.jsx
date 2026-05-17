@@ -10,7 +10,7 @@ const STATUS_LABEL = {
   connecting:    '⟳ Connecting…',
   syncing:       '⟳ Syncing…',
   synced:        '✓ Synced',
-  offline:       '⚡ Offline — Update via one device only',
+  offline:       '⚡ Not Connected — Update via one device only',
   unconfigured:  '',
 }
 
@@ -42,7 +42,7 @@ export default function App() {
     <div className="app">
       {/* Sync status bar */}
       {status !== 'unconfigured' && (
-        <div className="sync-bar" onClick={() => setShowSync(s => !s)}>
+        <div className={`sync-bar${status === 'offline' ? ' sync-bar--offline' : ''}`} onClick={() => setShowSync(s => !s)}>
           <span className={`sync-status sync-status--${status}`}>{STATUS_LABEL[status]}</span>
           <span className="sync-boat-id">Boat: {boatId}</span>
         </div>
