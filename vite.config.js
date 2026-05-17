@@ -8,4 +8,7 @@ export default defineConfig({
     host: true,
     https: true,
   },
+  resolve: {
+    conditions: ['browser', 'import', 'module', 'default'],
+  },
 })
