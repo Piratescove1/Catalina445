@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { exportMaintenancePDF } from '../utils/exportMaintenancePDF'
 
 const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
@@ -175,7 +176,12 @@ export default function MaintenanceScreen({ maintenance, addEntry, updateEntry, 
           </p>
         </div>
         {!showForm && (
-          <button className="add-btn" onClick={() => setShowForm(true)}>+ New Entry</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="add-btn" onClick={() => setShowForm(true)}>+ New Entry</button>
+            {maintenance.length > 0 && (
+              <button className="voyage-btn" onClick={() => exportMaintenancePDF(maintenance)}>Export PDF</button>
+            )}
+          </div>
         )}
       </header>
 
