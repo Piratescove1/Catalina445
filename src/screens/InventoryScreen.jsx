@@ -4,7 +4,7 @@ import BoatDiagram from '../components/BoatDiagram'
 import CompartmentModal from '../components/CompartmentModal'
 import VoiceButton from '../components/VoiceButton'
 
-export default function InventoryScreen({ inventory, addItem, removeItem, setItemQty, deleteItem, findItem }) {
+export default function InventoryScreen({ boatName, inventory, addItem, removeItem, setItemQty, deleteItem, findItem }) {
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState('')
 
@@ -64,7 +64,7 @@ export default function InventoryScreen({ inventory, addItem, removeItem, setIte
     <div className="screen">
       <header className="screen-header">
         <div>
-          <h1 className="screen-title">Catalina 445</h1>
+          <h1 className="screen-title">{boatName || 'Catalina 445'}</h1>
           <p className="screen-subtitle">{totalItems} items · {compartmentsWithItems} compartments stocked</p>
         </div>
         <VoiceButton

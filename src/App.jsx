@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
 import { useDitchBag } from './hooks/useDitchBag'
+import { usePrefs } from './hooks/usePrefs'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
@@ -19,10 +20,13 @@ const STATUS_LABEL = {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('inventory')
-  const [showSync, setShowSync] = useState(false)
+  const [screen, setScreen]       = useState('inventory')
+  const [showSync, setShowSync]   = useState(false)
+  const [showPrefs, setShowPrefs] = useState(false)
   const [joinInput, setJoinInput] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const { prefs, setPref } = usePrefs()
 
   const {
     inventory, voyages, activeVoyage,
@@ -65,9 +69,43 @@ export default function App() {
     <div className="app">
       {/* Sync status bar */}
       {status !== 'unconfigured' && (
-        <div className={`sync-bar${status === 'offline' ? ' sync-bar--offline' : ''}`} onClick={() => setShowSync(s => !s)}>
-          <span className={`sync-status sync-status--${status}`}>{STATUS_LABEL[status]}</span>
-          <span className="sync-boat-id">Boat: {boatId}</span>
+        <div className={`sync-bar${status === 'offline' ? ' sync-bar--offline' : ''}`}>
+          <span
+            className={`sync-status sync-status--${status}`}
+            onClick={() => { setShowSync(s => !s); setShowPrefs(false) }}
+            style={{ flex: 1, cursor: 'pointer' }}
+          >
+            {STATUS_LABEL[status]}
+          </span>
+          <span
+            className="sync-boat-id"
+            onClick={() => { setShowSync(s => !s); setShowPrefs(false) }}
+            style={{ cursor: 'pointer' }}
+          >
+            Boat: {boatId}
+          </span>
+          <button
+            className="prefs-gear-btn"
+            onClick={() => { setShowPrefs(s => !s); setShowSync(false) }}
+            aria-label="Preferences"
+          >⚙️</button>
+        </div>
+      )}
+
+      {/* Preferences panel */}
+      {showPrefs && (
+        <div className="sync-panel">
+          <p className="sync-panel-title">Preferences</p>
+          <div className="prefs-row">
+            <label className="prefs-label">Boat Name</label>
+            <input
+              className="add-input add-input--name"
+              value={prefs.boatName}
+              onChange={e => setPref('boatName', e.target.value)}
+              placeholder="e.g. Catalina 445"
+            />
+          </div>
+          <button className="sync-close" onClick={() => setShowPrefs(false)}>Done</button>
         </div>
       )}
 
@@ -100,6 +138,7 @@ export default function App() {
 
       {screen === 'inventory' && (
         <InventoryScreen
+          boatName={prefs.boatName}
           inventory={inventory}
           addItem={addItem}
           removeItem={removeItem}
