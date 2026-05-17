@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { exportToExcel } from './lib/exportExcel'
 import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
 import { useDitchBag } from './hooks/useDitchBag'
@@ -103,6 +104,12 @@ export default function App() {
               placeholder="e.g. Catalina 445"
             />
           </div>
+          <button
+            className="export-btn"
+            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, boatName: prefs.boatName })}
+          >
+            Download Excel Backup
+          </button>
           <button className="sync-close" onClick={() => setShowPrefs(false)}>Done</button>
         </div>
       )}

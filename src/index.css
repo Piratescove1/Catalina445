@@ -187,6 +187,20 @@ html, body, #root {
   margin-bottom: 12px;
 }
 
+.export-btn {
+  background: var(--brass);
+  border: none;
+  color: var(--navy);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.export-btn:active { opacity: 0.8; }
+
 .sync-close {
   background: none;
   border: 1px solid var(--navy-light);
