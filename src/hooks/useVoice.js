@@ -1,3 +1,18 @@
+/**
+ * useVoice — speech recognition + command parser.
+ *
+ * Uses webkitSpeechRecognition (Chrome/Safari). Requires HTTPS.
+ *
+ * parseCommand() maps plain English phrases to structured command objects:
+ *   { action: 'add'|'remove'|'check'|'startVoyage'|'endVoyage'|'note',
+ *     qty, item, compartmentNum, destination, text }
+ *
+ * The recognizer tries up to 3 speech alternatives before giving up,
+ * which improves accuracy for maritime terms and item names.
+ *
+ * Filler words stripped from the start of any utterance:
+ *   "let's", "please", "can you", "hey", "ok", "okay", "now"
+ */
 import { useState, useRef, useCallback } from 'react'
 
 const wordToNum = { one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,

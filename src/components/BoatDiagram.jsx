@@ -1,3 +1,18 @@
+/**
+ * BoatDiagram — renders the Catalina 445 floor plan with interactive compartment circles.
+ *
+ * The boat image (public/boat-plan.png) is extracted from the official PDF.
+ * Circle positions (POSITIONS) are stored as % of image dimensions so they
+ * stay accurate at any zoom level. A ResizeObserver watches the container and
+ * scales the diagram to fill it on iPad, while enforcing a MIN_W on phones
+ * (making the diagram horizontally scrollable rather than tiny).
+ *
+ * Each circle shows the compartment number and a badge with total item count.
+ * Circles are gold when stocked, outline-only when empty.
+ *
+ * Below the diagram, a text list of all compartments provides an alternative
+ * tap target and shows item counts.
+ */
 import { useRef, useState, useEffect } from 'react'
 import { COMPARTMENTS } from '../data/compartments'
 

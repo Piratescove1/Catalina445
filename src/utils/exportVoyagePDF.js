@@ -1,3 +1,16 @@
+/**
+ * exportVoyagePDF — generates and auto-downloads a formatted A4 PDF for a voyage.
+ *
+ * Layout:
+ *   - Dark navy header with voyage title and export timestamp
+ *   - Voyage summary: name, start/end times, duration, status
+ *   - Log entries: each shows timestamp, nav data (GPS/COG/SOG/AWA/AWS),
+ *     and free-text notes, separated by a rule line
+ *   - Adds a new page automatically when content approaches the bottom margin
+ *
+ * Nav data is rendered in Courier (monospace) for alignment.
+ * File is saved as "{voyage_name}_log.pdf".
+ */
 import { jsPDF } from 'jspdf'
 
 function fmt(iso) {

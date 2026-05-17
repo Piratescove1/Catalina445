@@ -1,3 +1,15 @@
+/**
+ * useInventory — manages all inventory and voyage state.
+ *
+ * Inventory is a plain object keyed by compartment id:
+ *   { "comp-1": [{ name, qty, unit, addedAt }], ... }
+ *
+ * Voyages is an array of voyage objects:
+ *   [{ id, name, destination, startTime, endTime, status, notes[] }]
+ *
+ * Both are persisted to localStorage on every change so they survive
+ * page reloads and work fully offline.
+ */
 import { useState, useCallback } from 'react'
 import { COMPARTMENTS } from '../data/compartments'
 

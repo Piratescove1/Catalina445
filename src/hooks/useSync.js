@@ -1,3 +1,19 @@
+/**
+ * useSync — real-time cross-device sync via Firebase Firestore.
+ *
+ * Each boat has a 6-character uppercase Boat Code stored in localStorage.
+ * All devices that share the same code read/write the same Firestore document
+ * at boats/{boatId}.
+ *
+ * Loop prevention: every device generates a random DEVICE_ID at startup.
+ * When a Firestore snapshot arrives with our own DEVICE_ID, we ignore it —
+ * that was our own push echoing back.
+ *
+ * Writes are debounced 1.5s so rapid changes (e.g. voice commands) don't
+ * hammer Firestore with one write per keystroke.
+ *
+ * Status values: 'connecting' | 'syncing' | 'synced' | 'offline' | 'unconfigured'
+ */
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db, configured } from '../lib/firebase'
