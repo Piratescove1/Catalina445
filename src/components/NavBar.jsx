@@ -31,6 +31,16 @@ export default function NavBar({ active, onNavigate }) {
         <span className="nav-label">Maintenance</span>
         <span className="nav-sublabel">Service Log</span>
       </button>
+      <button
+        className={`nav-btn nav-btn--ditch ${active === 'ditchbag' ? 'nav-btn--active nav-btn--ditch-active' : ''}`}
+        onClick={() => onNavigate('ditchbag')}
+        aria-label="Ditch bag screen"
+      >
+        {active === 'ditchbag' && <span className="nav-indicator nav-indicator--ditch" />}
+        <span className="nav-icon">🆘</span>
+        <span className="nav-label">Ditch Bag</span>
+        <span className="nav-sublabel">Abandon Ship</span>
+      </button>
     </nav>
   )
 }

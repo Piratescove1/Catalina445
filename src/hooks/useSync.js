@@ -39,7 +39,7 @@ export function joinBoat(id) {
   window.location.reload()
 }
 
-export function useSync({ inventory, voyages, maintenance, futureProjects, onRemoteData }) {
+export function useSync({ inventory, voyages, maintenance, futureProjects, ditchSop, ditchItems, onRemoteData }) {
   const [status, setStatus]       = useState(configured ? 'connecting' : 'unconfigured')
   const [pendingSync, setPendingSync] = useState(false) // true = reconnected with unsynced changes
   const [boatId]                  = useState(getBoatId)
@@ -81,7 +81,7 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
         const data = snap.data()
         if (data.deviceId === DEVICE_ID) { setStatus('synced'); return }
         ignoreNext.current = true
-        onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects)
+        onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects, data.ditchSop, data.ditchItems)
         setTimeout(() => { ignoreNext.current = false }, 1000)
         setStatus('synced')
       },
@@ -91,18 +91,18 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
   }, [boatId, onRemoteData])
 
   // Debounced push — skips if offline (tracks dirty state instead)
-  const push = useCallback((inv, voy, maint, future) => {
+  const push = useCallback((inv, voy, maint, future, dSop, dItems) => {
     if (!configured || !db || ignoreNext.current || pendingSync) return
     if (!navigator.onLine) {
       offlineDirty.current = true
-      pendingData.current = { inv, voy, maint, future: futureProjects }
+      pendingData.current = { inv, voy, maint, future, dSop, dItems }
       return
     }
     clearTimeout(pushTimer.current)
     pushTimer.current = setTimeout(async () => {
       if (!navigator.onLine) {
         offlineDirty.current = true
-        pendingData.current = { inv, voy, maint, future: futureProjects }
+        pendingData.current = { inv, voy, maint, future, dSop, dItems }
         return
       }
       setStatus('syncing')
@@ -112,6 +112,8 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
           voyages: voy,
           maintenance: maint,
           futureProjects: future,
+          ditchSop: dSop,
+          ditchItems: dItems,
           deviceId: DEVICE_ID,
           updatedAt: Date.now(),
         })
@@ -127,7 +129,7 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
     setPendingSync(false)
     offlineDirty.current = false
     if (keepLocal && pendingData.current) {
-      const { inv, voy, maint, future } = pendingData.current
+      const { inv, voy, maint, future, dSop, dItems } = pendingData.current
       setStatus('syncing')
       try {
         await setDoc(doc(db, 'boats', boatId), {
@@ -135,6 +137,8 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
           voyages: voy,
           maintenance: maint,
           futureProjects: future,
+          ditchSop: dSop,
+          ditchItems: dItems,
           deviceId: DEVICE_ID,
           updatedAt: Date.now(),
         })
@@ -149,7 +153,7 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, onRem
         if (snap.exists()) {
           const data = snap.data()
           ignoreNext.current = true
-          onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects)
+          onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects, data.ditchSop, data.ditchItems)
           setTimeout(() => { ignoreNext.current = false }, 1000)
         }
         setStatus('synced')

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
+import { useDitchBag } from './hooks/useDitchBag'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
+import DitchBagScreen from './screens/DitchBagScreen'
 import NavBar from './components/NavBar'
 import './index.css'
 
@@ -37,17 +39,27 @@ export default function App() {
     importMaintenance,
   } = useMaintenance()
 
-  const onRemoteData = useCallback((inv, voy, maint, future) => {
+  const {
+    sop, setSop, items: ditchItems, addItem: addDitchItem,
+    updateItem: updateDitchItem, deleteItem: deleteDitchItem,
+    togglePacked, importDitchBag,
+  } = useDitchBag()
+
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote) => {
     importData(inv, voy)
     importMaintenance(maint, future)
-  }, [importData, importMaintenance])
+    importDitchBag(ditchSop, ditchItemsRemote)
+  }, [importData, importMaintenance, importDitchBag])
 
-  const { status, boatId, push, pendingSync, resolveSync } = useSync({ inventory, voyages, maintenance, futureProjects, onRemoteData })
+  const { status, boatId, push, pendingSync, resolveSync } = useSync({
+    inventory, voyages, maintenance, futureProjects,
+    ditchSop: sop, ditchItems, onRemoteData,
+  })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects)
-  }, [inventory, voyages, maintenance, futureProjects])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems])
 
   return (
     <div className="app">
@@ -123,6 +135,17 @@ export default function App() {
           addPart={addPart}
           togglePart={togglePart}
           deletePart={deletePart}
+        />
+      )}
+      {screen === 'ditchbag' && (
+        <DitchBagScreen
+          sop={sop}
+          setSop={setSop}
+          items={ditchItems}
+          addItem={addDitchItem}
+          updateItem={updateDitchItem}
+          deleteItem={deleteDitchItem}
+          togglePacked={togglePacked}
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />
