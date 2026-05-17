@@ -10,7 +10,7 @@ const STATUS_LABEL = {
   connecting:    '⟳ Connecting…',
   syncing:       '⟳ Syncing…',
   synced:        '✓ Synced',
-  offline:       '⚡ Offline',
+  offline:       '⚡ Offline — Update via one device only',
   unconfigured:  '',
 }
 
