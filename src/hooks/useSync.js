@@ -41,6 +41,19 @@ export function useSync({ inventory, voyages, onRemoteData }) {
   const ignoreNext            = useRef(false)
   const pushTimer             = useRef(null)
 
+  // Instantly reflect browser online/offline events (fires immediately on iOS when WiFi drops)
+  useEffect(() => {
+    if (!configured) return
+    const goOffline = () => setStatus('offline')
+    const goOnline  = () => setStatus('connecting')
+    window.addEventListener('offline', goOffline)
+    window.addEventListener('online',  goOnline)
+    return () => {
+      window.removeEventListener('offline', goOffline)
+      window.removeEventListener('online',  goOnline)
+    }
+  }, [])
+
   // Listen for remote changes
   useEffect(() => {
     if (!configured || !db) return
