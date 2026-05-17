@@ -190,6 +190,18 @@ export function useInventory() {
     })
   }, [])
 
+  const deleteLogEntry = useCallback((voyageId, index) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const notes = v.notes.filter((_, i) => i !== index)
+        return { ...v, notes }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
   const addVoyageNote = useCallback((id, text) => addLogEntry(id, text), [addLogEntry])
 
   const importData = useCallback((inv, voy) => {
@@ -216,5 +228,6 @@ export function useInventory() {
     importData,
     addVoyageNote,
     addLogEntry,
+    deleteLogEntry,
   }
 }

@@ -120,9 +120,25 @@ function LogEntryForm({ voyageId, onAdd }) {
   )
 }
 
-function LogEntryRow({ entry, onEdit }) {
+function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCancel }) {
+  return (
+    <div className="dialog-overlay">
+      <div className="dialog">
+        <p className="dialog-title">{title}</p>
+        <p className="dialog-body">{body}</p>
+        <div className="dialog-btns">
+          <button className="dialog-btn dialog-btn--danger" onClick={onConfirm}>{confirmLabel}</button>
+          <button className="dialog-btn" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LogEntryRow({ entry, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(entry.text || '')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const navParts = [
     entry.lat && entry.lon && `${entry.lat} ${entry.lon}`,
@@ -138,9 +154,14 @@ function LogEntryRow({ entry, onEdit }) {
     <div className="log-entry">
       <div className="log-entry-header">
         <span className="note-time">{formatTimeOnly(entry.time)}</span>
-        {onEdit && !editing && (
-          <button className="name-edit-btn" onClick={() => { setDraft(entry.text || ''); setEditing(true) }}>Edit</button>
-        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {onEdit && !editing && (
+            <button className="name-edit-btn" onClick={() => { setDraft(entry.text || ''); setEditing(true) }}>Edit</button>
+          )}
+          {onDelete && !editing && (
+            <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
+          )}
+        </div>
       </div>
       {navParts.length > 0 && <p className="log-entry-nav">{navParts.join(' · ')}</p>}
       {editing ? (
@@ -159,11 +180,20 @@ function LogEntryRow({ entry, onEdit }) {
       ) : (
         entry.text && <p className="log-entry-text">{entry.text}</p>
       )}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Log Entry?"
+          body={`Delete the entry from ${formatTimeOnly(entry.time)}? This cannot be undone.`}
+          confirmLabel="Yes, delete entry"
+          onConfirm={() => { setConfirmDelete(false); onDelete() }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   )
 }
 
-function LogList({ notes, voyageId, onEdit }) {
+function LogList({ notes, voyageId, onEdit, onDelete }) {
   const reversed = [...notes].map((n, i) => ({ ...n, _origIndex: i })).reverse()
   let lastDay = null
   return (
@@ -178,6 +208,7 @@ function LogList({ notes, voyageId, onEdit }) {
             <LogEntryRow
               entry={n}
               onEdit={onEdit ? (updates) => onEdit(voyageId, n._origIndex, updates) : undefined}
+              onDelete={onDelete ? () => onDelete(voyageId, n._origIndex) : undefined}
             />
           </div>
         )
@@ -186,7 +217,7 @@ function LogList({ notes, voyageId, onEdit }) {
   )
 }
 
-export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVoyage, resumeVoyage, renameVoyage, addVoyageNote, addLogEntry, updateLogEntry }) {
+export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVoyage, resumeVoyage, renameVoyage, addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry }) {
   const [name, setName] = useState('')
   const [feedback, setFeedback] = useState('')
   const [openId, setOpenId] = useState(null)
@@ -281,7 +312,7 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
 
             <LogEntryForm voyageId={activeVoyage.id} onAdd={addLogEntry} />
 
-            <LogList notes={activeVoyage.notes} voyageId={activeVoyage.id} onEdit={updateLogEntry} />
+            <LogList notes={activeVoyage.notes} voyageId={activeVoyage.id} onEdit={updateLogEntry} onDelete={deleteLogEntry} />
           </div>
         ) : (
           <div className="voyage-start">
@@ -340,7 +371,7 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
                     )}
                     {v.notes.length === 0
                       ? <p className="item-empty">No log entries</p>
-                      : <LogList notes={v.notes} voyageId={v.id} onEdit={updateLogEntry} />
+                      : <LogList notes={v.notes} voyageId={v.id} onEdit={updateLogEntry} onDelete={deleteLogEntry} />
                     }
                   </div>
                 )}

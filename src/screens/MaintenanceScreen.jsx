@@ -16,6 +16,21 @@ function formatDate(iso) {
   })
 }
 
+function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCancel }) {
+  return (
+    <div className="dialog-overlay">
+      <div className="dialog">
+        <p className="dialog-title">{title}</p>
+        <p className="dialog-body">{body}</p>
+        <div className="dialog-btns">
+          <button className="dialog-btn dialog-btn--danger" onClick={onConfirm}>{confirmLabel}</button>
+          <button className="dialog-btn" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function EntryCard({ entry, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -25,15 +40,18 @@ function EntryCard({ entry, onEdit, onDelete }) {
         <span className="maint-date">{formatDate(entry.date)}</span>
         <div className="maint-card-actions">
           <button className="maint-action-btn" onClick={onEdit}>Edit</button>
-          {confirmDelete
-            ? <>
-                <button className="maint-action-btn maint-action-btn--danger" onClick={onDelete}>Confirm Delete</button>
-                <button className="maint-action-btn" onClick={() => setConfirmDelete(false)}>Cancel</button>
-              </>
-            : <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
-          }
+          <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
         </div>
       </div>
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Maintenance Record?"
+          body={`Delete "${entry.projectName}"? This cannot be undone.`}
+          confirmLabel="Yes, delete record"
+          onConfirm={() => { setConfirmDelete(false); onDelete() }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
       <p className="maint-project-name">{entry.projectName}</p>
       {entry.replacementParts && (
         <div className="maint-field">
