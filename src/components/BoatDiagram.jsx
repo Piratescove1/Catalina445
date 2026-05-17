@@ -19,33 +19,33 @@ import { COMPARTMENTS } from '../data/compartments'
 // Circle positions as percentage of image dimensions
 // Detected from yellow sticker positions in 445 Compartments.pdf (OCR + pixel analysis)
 const POSITIONS = {
-  1:  { px: 79.1, py: 46.8 },
-  2:  { px: 70.7, py: 46.5 },
-  3:  { px: 68.0, py: 43.6 },
-  4:  { px: 68.0, py: 50.1 },
-  5:  { px: 56.3, py: 28.0 },
-  6:  { px: 56.5, py: 35.3 },
-  7:  { px: 56.6, py: 42.3 },
-  8:  { px: 48.1, py: 35.4 },
-  9:  { px: 51.9, py: 28.0 },
-  10: { px: 51.9, py: 33.7 },
-  11: { px: 48.0, py: 42.8 },
-  12: { px: 48.4, py: 28.0 },
-  13: { px: 50.0, py: 66.9 },
-  14: { px: 58.1, py: 64.6 },
-  15: { px: 44.0, py: 30.1 },
-  16: { px: 44.1, py: 36.8 },
-  17: { px: 42.7, py: 53.5 },
-  18: { px: 38.1, py: 37.4 },
-  19: { px: 36.8, py: 47.3 },
-  20: { px: 27.6, py: 37.0 },
-  21: { px: 19.7, py: 47.1 },
-  22: { px: 11.2, py: 37.0 },
-  23: { px: 11.3, py: 56.3 },
+  1:  { px: 78.9, py: 34.6 },
+  2:  { px: 70.6, py: 34.3 },
+  3:  { px: 67.9, py: 30.8 },
+  4:  { px: 67.9, py: 38.6 },
+  5:  { px: 56.3, py: 12.1 },
+  6:  { px: 56.5, py: 20.8 },
+  7:  { px: 56.6, py: 29.2 },
+  8:  { px: 48.1, py: 20.9 },
+  9:  { px: 51.9, py: 12.1 },
+  10: { px: 51.9, py: 18.9 },
+  11: { px: 48.0, py: 29.8 },
+  12: { px: 48.4, py: 12.1 },
+  13: { px: 50.0, py: 58.8 },
+  14: { px: 58.1, py: 56.0 },
+  15: { px: 44.1, py: 14.6 },
+  16: { px: 44.2, py: 22.6 },
+  17: { px: 42.8, py: 42.7 },
+  18: { px: 38.2, py: 23.3 },
+  19: { px: 36.9, py: 35.2 },
+  20: { px: 27.8, py: 22.9 },
+  21: { px: 19.9, py: 35.0 },
+  22: { px: 11.5, py: 22.9 },
+  23: { px: 11.6, py: 46.0 },
 }
 
-// Image aspect ratio: 2688 × 1531
-const ASPECT = 1531 / 2688
+// Image aspect ratio: 2707 × 1275 (cropped from 2688 × 1531)
+const ASPECT = 1275 / 2707
 const MIN_W = 1100  // minimum width — scrollable on phone
 
 function itemCount(inventory, id) {
