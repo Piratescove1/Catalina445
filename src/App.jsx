@@ -10,7 +10,7 @@ const STATUS_LABEL = {
   connecting:    '⟳ Connecting…',
   syncing:       '⟳ Syncing…',
   synced:        '✓ Synced',
-  offline:       '⚡ Not Connected — Update via one device only',
+  offline:       '⚡ Not Connected — Update via one device only until next sync. Last device to sync overwrites database.',
   unconfigured:  '',
 }
 
