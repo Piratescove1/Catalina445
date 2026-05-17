@@ -69,24 +69,15 @@ export default function App() {
     <div className="app">
       {/* Sync status bar */}
       {status !== 'unconfigured' && (
-        <div className={`sync-bar${status === 'offline' ? ' sync-bar--offline' : ''}`}>
-          <span
-            className={`sync-status sync-status--${status}`}
-            onClick={() => { setShowSync(s => !s); setShowPrefs(false) }}
-            style={{ flex: 1, cursor: 'pointer' }}
-          >
-            {STATUS_LABEL[status]}
-          </span>
-          <span
-            className="sync-boat-id"
-            onClick={() => { setShowSync(s => !s); setShowPrefs(false) }}
-            style={{ cursor: 'pointer' }}
-          >
-            Boat: {boatId}
-          </span>
+        <div
+          className={`sync-bar${status === 'offline' ? ' sync-bar--offline' : ''}`}
+          onClick={() => { setShowSync(s => !s); setShowPrefs(false) }}
+        >
+          <span className={`sync-status sync-status--${status}`}>{STATUS_LABEL[status]}</span>
+          <span className="sync-boat-id">Boat: {boatId}</span>
           <button
             className="prefs-gear-btn"
-            onClick={() => { setShowPrefs(s => !s); setShowSync(false) }}
+            onClick={e => { e.stopPropagation(); setShowPrefs(s => !s); setShowSync(false) }}
             aria-label="Preferences"
           >⚙️</button>
         </div>

@@ -97,6 +97,7 @@ html, body, #root {
   background: var(--navy-mid);
   border-bottom: 1px solid var(--navy-light);
   font-size: 0.72rem;
+  cursor: pointer;
 }
 
 .prefs-gear-btn {
@@ -143,7 +144,7 @@ html, body, #root {
   position: fixed;
   top: calc(var(--nav-h) + 52px + 28px);
   left: 0; right: 0;
-  z-index: 98;
+  z-index: 101;
   background: var(--navy-mid);
   border-bottom: 2px solid var(--brass-dim);
   padding: 16px 20px;
