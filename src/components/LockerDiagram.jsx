@@ -1,35 +1,35 @@
 import { LOCKERS, LOCKER_AREAS } from '../data/lockers'
 
-// Positions as % of image (2640 × 1797), bow=right, stern=left, stbd=top, port=bottom
-// Cropped from SVTwoHappyDrawers and Lockers.pdf to remove 3/4 of whitespace margins
+// Positions as % of image (2418 × 1136), bow=right, stern=left, stbd=top, port=bottom
+// Cropped from SVTwoHappyDrawers and Lockers.pdf removing 75% of whitespace margins
 const POSITIONS = {
-  'lock-1':  { px: 70.6, py: 45.2 },
-  'lock-2':  { px: 70.6, py: 50.6 },
-  'lock-3':  { px: 68.3, py: 41.0 },
-  'lock-4':  { px: 68.3, py: 56.0 },
-  'lock-5':  { px: 66.2, py: 58.5 },
-  'lock-6':  { px: 64.3, py: 58.4 },
-  'lock-7':  { px: 61.7, py: 54.5 },
-  'lock-8':  { px: 61.6, py: 61.2 },
-  'lock-9':  { px: 60.6, py: 46.5 },
-  'lock-10': { px: 58.2, py: 58.0 },
-  'lock-11': { px: 58.0, py: 63.8 },
-  'lock-12': { px: 50.1, py: 58.4 },
-  'lock-13': { px: 47.7, py: 30.5 },
-  'lock-14': { px: 46.1, py: 63.7 },
-  'lock-15': { px: 46.0, py: 58.7 },
-  'lock-16': { px: 43.9, py: 31.1 },
-  'lock-17': { px: 43.8, py: 39.3 },
-  'lock-18': { px: 35.4, py: 63.8 },
-  'lock-19': { px: 32.3, py: 34.0 },
-  'lock-20': { px: 31.5, py: 63.0 },
-  'lock-21': { px: 29.1, py: 34.0 },
-  'lock-22': { px: 28.3, py: 63.3 },
-  'lock-23': { px: 26.0, py: 48.9 },
+  'lock-1':  { px: 72.6, py: 46.6 },
+  'lock-2':  { px: 72.6, py: 55.0 },
+  'lock-3':  { px: 70.1, py: 39.8 },
+  'lock-4':  { px: 70.1, py: 63.6 },
+  'lock-5':  { px: 67.8, py: 67.5 },
+  'lock-6':  { px: 65.6, py: 67.3 },
+  'lock-7':  { px: 62.8, py: 61.2 },
+  'lock-8':  { px: 62.7, py: 71.8 },
+  'lock-9':  { px: 61.6, py: 48.6 },
+  'lock-10': { px: 59.0, py: 66.8 },
+  'lock-11': { px: 58.8, py: 75.9 },
+  'lock-12': { px: 50.2, py: 67.3 },
+  'lock-13': { px: 47.5, py: 23.2 },
+  'lock-14': { px: 45.8, py: 75.8 },
+  'lock-15': { px: 45.7, py: 67.9 },
+  'lock-16': { px: 43.3, py: 24.1 },
+  'lock-17': { px: 43.2, py: 37.2 },
+  'lock-18': { px: 34.1, py: 75.9 },
+  'lock-19': { px: 30.7, py: 28.8 },
+  'lock-20': { px: 29.8, py: 74.6 },
+  'lock-21': { px: 27.2, py: 28.8 },
+  'lock-22': { px: 26.4, py: 75.2 },
+  'lock-23': { px: 23.9, py: 52.4 },
 }
 
-// 1797/2640 expressed as a percentage for the padding-bottom aspect-ratio trick
-const ASPECT_PCT = (1797 / 2640) * 100  // ≈ 68.07%
+// 1136/2418 expressed as a percentage for the padding-bottom aspect-ratio trick
+const ASPECT_PCT = (1136 / 2418) * 100  // ≈ 46.98%
 
 function itemCount(inv, id) {
   return (inv[id] || []).reduce((s, i) => s + i.qty, 0)
