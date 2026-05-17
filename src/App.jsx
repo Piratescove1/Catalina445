@@ -86,15 +86,15 @@ export default function App() {
           <button
             className="prefs-gear-btn"
             onClick={e => { e.stopPropagation(); setShowPrefs(s => !s); setShowSync(false) }}
-            aria-label="Preferences"
+            aria-label="Settings"
           >⚙️</button>
         </div>
       )}
 
-      {/* Preferences panel */}
+      {/* Settings panel */}
       {showPrefs && (
         <div className="sync-panel">
-          <p className="sync-panel-title">Preferences</p>
+          <p className="sync-panel-title">Settings</p>
           <div className="prefs-row">
             <label className="prefs-label">Boat Name</label>
             <input
