@@ -4,26 +4,29 @@ import { LOCKERS, LOCKER_AREAS } from '../data/lockers'
 // Positions as % of SVG viewBox (1000 × 420)
 // bow = right (x=100%), stern = left (x=0%), stbd = top (y=0%), port = bottom (y=100%)
 const POSITIONS = {
-  'lock-1':   { px: 79.0, py: 51.0 },
-  'lock-2':   { px: 75.5, py: 60.0 },
-  'lock-3':   { px: 72.5, py: 37.0 },
-  'lock-4':   { px: 68.0, py: 64.0 },
-  'lock-5':   { px: 65.0, py: 66.5 },
-  'lock-6':   { px: 63.5, py: 59.0 },
-  'lock-7':   { px: 57.5, py: 47.0 },
-  'lock-8':   { px: 62.5, py: 71.0 },
-  'lock-9':   { px: 60.5, py: 75.0 },
-  'lock-10':  { px: 58.5, py: 79.0 },
-  'lock-11':  { px: 56.5, py: 70.0 },
-  'lock-12':  { px: 55.0, py: 66.0 },
-  'lock-13':  { px: 55.5, py: 38.5 },
-  'lock-14':  { px: 52.5, py: 71.5 },
-  'lock-15':  { px: 51.5, py: 76.5 },
-  'lock-16':  { px: 42.5, py: 76.0 },
-  'lock-17':  { px: 47.5, py: 27.5 },
-  'lock-18':  { px: 45.0, py: 27.5 },
-  'lock-18b': { px: 35.5, py: 77.5 },
-  'lock-19':  { px: 33.5, py: 75.5 },
+  'lock-1':  { px: 78.7, py: 49.6 },
+  'lock-2':  { px: 77.2, py: 56.4 },
+  'lock-3':  { px: 72.4, py: 38.2 },
+  'lock-4':  { px: 68.5, py: 61.8 },
+  'lock-5':  { px: 65.0, py: 62.7 },
+  'lock-6':  { px: 63.0, py: 60.0 },
+  'lock-7':  { px: 57.5, py: 47.8 },
+  'lock-8':  { px: 62.6, py: 67.3 },
+  'lock-9':  { px: 60.2, py: 71.5 },
+  'lock-10': { px: 58.3, py: 76.0 },
+  'lock-11': { px: 56.3, py: 67.3 },
+  'lock-12': { px: 57.1, py: 75.1 },
+  'lock-13': { px: 57.5, py: 26.9 },
+  'lock-14': { px: 52.4, py: 66.9 },
+  'lock-15': { px: 52.4, py: 24.2 },
+  'lock-16': { px: 42.5, py: 66.9 },
+  'lock-17': { px: 42.5, py: 72.7 },
+  'lock-18': { px: 47.2, py: 43.6 },
+  'lock-19': { px: 33.9, py: 72.4 },
+  'lock-20': { px: 45.3, py: 28.2 },
+  'lock-21': { px: 29.5, py: 71.8 },
+  'lock-22': { px: 46.9, py: 28.2 },
+  'lock-23': { px: 27.2, py: 76.0 },
 }
 
 const VB_W = 1000
@@ -144,9 +147,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
                 onClick={() => onSelect(locker.id)}
                 aria-label={`${locker.name}`}
               >
-                <span className="circle-num" style={{ fontSize: String(locker.num).length > 2 ? '0.5rem' : undefined }}>
-                  {locker.num}
-                </span>
+                <span className="circle-num">{locker.num}</span>
                 {hasItems && <span className="circle-badge">{count > 99 ? '99+' : count}</span>}
               </button>
             )
