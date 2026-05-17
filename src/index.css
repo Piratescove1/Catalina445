@@ -12,7 +12,7 @@
   --green:      #27AE60;
   --red:        #C0392B;
   --radius:     12px;
-  --nav-h:      80px;
+  --nav-h:      64px;
   font-size:    16px;
 }
 
@@ -41,7 +41,8 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-top: calc(var(--nav-h) + 52px);
+  padding-top: 34px;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 
 .screen-header {
@@ -87,7 +88,7 @@ html, body, #root {
 /* ── Sync bar ──────────────────────────────────────────── */
 .sync-bar {
   position: fixed;
-  top: calc(var(--nav-h) + 52px);
+  top: env(safe-area-inset-top);
   left: 0; right: 0;
   z-index: 99;
   display: flex;
@@ -142,7 +143,7 @@ html, body, #root {
 
 .sync-panel {
   position: fixed;
-  top: calc(var(--nav-h) + 52px + 28px);
+  top: 34px;
   left: 0; right: 0;
   z-index: 101;
   background: var(--navy-mid);
@@ -567,65 +568,97 @@ html, body, #root {
   color: #fff;
 }
 
-/* ── Top nav — 3-col × 2-row grid ─────────────────────── */
+/* ── Bottom nav — single row, 4 tabs ───────────────────── */
 .navbar {
   position: fixed;
-  top: 0;
+  bottom: 0;
   left: 0; right: 0;
-  background: var(--navy-mid);
-  border-bottom: 2px solid var(--brass-dim);
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: var(--nav-h) 52px;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  background: rgba(11, 25, 41, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(196, 148, 58, 0.35);
+  box-shadow: 0 -1px 0 rgba(196,148,58,0.12), 0 -8px 32px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: stretch;
   z-index: 100;
-  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Push screen content below both nav rows + sync bar */
-.screen { padding-top: calc(var(--nav-h) + 52px + 28px) }
+/* Subtle brass shimmer line at top edge */
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  opacity: 0.6;
+}
 
 .nav-btn {
+  flex: 1;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
+  padding: 8px 2px 6px;
   background: none;
   border: none;
-  border-right: 1px solid var(--navy-light);
-  color: var(--cream-dim);
+  color: rgba(176, 168, 155, 0.6);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: color 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Remove right border from maintenance (col 3) */
-.nav-btn--last { border-right: none }
-
 .nav-btn--active {
   color: var(--brass);
-  background: rgba(196,148,58,0.12);
 }
 
-.nav-icon { font-size: 1.8rem; line-height: 1 }
-.nav-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase }
-
-.nav-indicator {
+.nav-btn--active::after {
+  content: '';
   position: absolute;
-  bottom: 0; left: 15%; right: 15%;
-  height: 3px;
-  background: var(--brass);
-  border-radius: 4px 4px 0 0;
+  inset: 6px 8px;
+  background: radial-gradient(ellipse at 50% 40%, rgba(196,148,58,0.18) 0%, transparent 70%);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.nav-icon {
+  font-size: 1.55rem;
+  line-height: 1;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.nav-btn--active .nav-icon {
+  filter: drop-shadow(0 0 6px rgba(196,148,58,0.65));
+  transform: translateY(-1px);
+}
+
+.nav-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
 }
 
 .nav-sublabel {
-  font-size: 0.62rem;
-  color: var(--cream-dim);
+  font-size: 0.52rem;
   letter-spacing: 0.03em;
+  transition: color 0.2s;
 }
 
 .nav-btn--active .nav-sublabel { color: var(--brass-dim) }
+
+.nav-indicator {
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  border-radius: 0 0 3px 3px;
+}
 
 /* ── Boat diagram ──────────────────────────────────────── */
 .diagram-wrap {
@@ -1396,22 +1429,25 @@ html, body, #root {
 
 /* ── Ditch Bag — emergency high-vis theme ──────────────── */
 
-/* Nav tab — always glows red to stand out, centered in row 2 */
+/* Ditch bag tab — always red-tinted to stand out */
 .nav-btn--ditch {
-  background: rgba(180, 28, 28, 0.18);
-  border-top: 1px solid #7f1d1d;
-  border-right: 1px solid #7f1d1d;
-  border-left: 1px solid #7f1d1d;
-  border-radius: 0 0 10px 10px;
+  color: #fca5a5;
 }
-.nav-btn--ditch .nav-icon { font-size: 1.4rem; filter: drop-shadow(0 0 5px #ef4444); }
-.nav-btn--ditch .nav-label { color: #fca5a5; font-size: 0.72rem; }
+.nav-btn--ditch .nav-icon {
+  filter: drop-shadow(0 0 6px rgba(239,68,68,0.55));
+}
 .nav-btn--ditch .nav-sublabel { color: #f87171; }
 .nav-btn--ditch-active {
-  background: rgba(220, 38, 38, 0.32) !important;
+  color: #ff8080;
+}
+.nav-btn--ditch-active::after {
+  background: radial-gradient(ellipse at 50% 40%, rgba(220,38,38,0.22) 0%, transparent 70%) !important;
+}
+.nav-btn--ditch-active .nav-icon {
+  filter: drop-shadow(0 0 8px rgba(239,68,68,0.75)) !important;
 }
 .nav-indicator--ditch {
-  background: #ef4444 !important;
+  background: linear-gradient(90deg, transparent, #ef4444, transparent) !important;
 }
 
 /* Screen shell */
@@ -1809,12 +1845,12 @@ html, body, #root {
 /* ── iPad / tablet layout (768px+) ────────────────────── */
 @media (min-width: 768px) {
 
-  /* Nav — taller, bigger text */
+  /* Nav — slightly taller on tablet */
   :root { --nav-h: 72px }
 
-  .nav-icon  { font-size: 2rem }
-  .nav-label { font-size: 0.9rem }
-  .nav-sublabel { font-size: 0.72rem }
+  .nav-icon  { font-size: 1.75rem }
+  .nav-label { font-size: 0.72rem }
+  .nav-sublabel { font-size: 0.58rem }
 
   /* Modal — centered, wider */
   .modal { max-width: 640px; border-radius: var(--radius) !important }
