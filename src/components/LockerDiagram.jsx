@@ -2,31 +2,31 @@ import { useRef, useState, useEffect } from 'react'
 import { LOCKERS, LOCKER_AREAS } from '../data/lockers'
 
 // Positions as % of image (2688 × 1531), bow=right, stern=left, stbd=top, port=bottom
-// Calibrated directly from the "Drawers and Lockers" reference drawing
+// Derived from pixel-detection of yellow label blobs in boat-plan.png via scipy + OCR
 const POSITIONS = {
-  'lock-1':  { px: 83.6, py: 53.1 },
-  'lock-2':  { px: 81.6, py: 63.5 },
-  'lock-3':  { px: 83.2, py: 45.4 },
-  'lock-4':  { px: 85.2, py: 75.0 },
-  'lock-5':  { px: 71.4, py: 75.0 },
-  'lock-6':  { px: 69.1, py: 75.0 },
-  'lock-7':  { px: 66.3, py: 51.0 },
-  'lock-8':  { px: 66.3, py: 68.3 },
-  'lock-9':  { px: 64.4, py: 77.1 },
-  'lock-10': { px: 65.3, py: 82.3 },
-  'lock-11': { px: 62.0, py: 68.3 },
-  'lock-12': { px: 62.0, py: 81.7 },
-  'lock-13': { px: 69.5, py: 28.1 },
-  'lock-14': { px: 59.7, py: 64.0 },
-  'lock-15': { px: 62.2, py: 27.1 },
-  'lock-16': { px: 50.6, py: 68.8 },
-  'lock-17': { px: 50.8, py: 79.2 },
-  'lock-18': { px: 57.3, py: 45.8 },
-  'lock-19': { px: 40.0, py: 75.6 },
-  'lock-20': { px: 34.5, py: 39.2 },
-  'lock-21': { px: 38.6, py: 77.1 },
-  'lock-22': { px: 32.4, py: 37.9 },
-  'lock-23': { px: 37.1, py: 81.9 },
+  'lock-1':  { px: 79.1, py: 46.1 },  // rightmost blob — bow area
+  'lock-2':  { px: 70.7, py: 45.8 },
+  'lock-3':  { px: 68.0, py: 42.9 },
+  'lock-4':  { px: 68.0, py: 49.3 },
+  'lock-5':  { px: 56.3, py: 27.6 },
+  'lock-6':  { px: 56.5, py: 34.8 },
+  'lock-7':  { px: 56.6, py: 41.7 },
+  'lock-8':  { px: 58.1, py: 63.6 },
+  'lock-9':  { px: 51.9, py: 27.5 },
+  'lock-10': { px: 51.8, py: 33.2 },  // process of elimination
+  'lock-11': { px: 50.0, py: 66.0 },
+  'lock-12': { px: 48.3, py: 27.5 },
+  'lock-13': { px: 48.1, py: 34.8 },  // process of elimination
+  'lock-14': { px: 47.9, py: 42.2 },
+  'lock-15': { px: 44.0, py: 29.6 },
+  'lock-16': { px: 44.0, py: 36.3 },
+  'lock-17': { px: 42.7, py: 52.8 },  // process of elimination
+  'lock-18': { px: 38.1, py: 36.9 },
+  'lock-19': { px: 36.8, py: 46.6 },
+  'lock-20': { px: 27.6, py: 36.4 },
+  'lock-21': { px: 19.7, py: 46.4 },
+  'lock-22': { px: 11.2, py: 36.4 },
+  'lock-23': { px: 11.3, py: 55.5 },
 }
 
 // Image native aspect ratio: 1531 / 2688
