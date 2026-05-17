@@ -485,10 +485,7 @@ html, body, #root {
   color: #fff;
 }
 
-/* Push screen content down to account for sync bar */
-.screen { padding-top: calc(var(--nav-h) + 28px) }
-
-/* ── Top nav — 3-col grid, 2 rows ─────────────────────── */
+/* ── Top nav — 3-col × 2-row grid ─────────────────────── */
 .navbar {
   position: fixed;
   top: 0;
@@ -502,18 +499,7 @@ html, body, #root {
   padding-top: env(safe-area-inset-top);
 }
 
-/* Thin separator between the two rows */
-.navbar::after {
-  content: '';
-  grid-column: 1 / -1;
-  grid-row: 1 / 2;
-  align-self: end;
-  height: 1px;
-  background: var(--navy-light);
-  pointer-events: none;
-}
-
-/* Update screen padding to account for both nav rows */
+/* Push screen content below both nav rows + sync bar */
 .screen { padding-top: calc(var(--nav-h) + 52px + 28px) }
 
 .nav-btn {
@@ -532,7 +518,8 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
-.nav-btn:nth-child(3) { border-right: none }
+/* Remove right border from maintenance (col 3) */
+.nav-btn--last { border-right: none }
 
 .nav-btn--active {
   color: var(--brass);
