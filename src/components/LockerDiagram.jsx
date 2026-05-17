@@ -28,8 +28,8 @@ const POSITIONS = {
   'lock-23': { px: 23.0, py: 55.0 },
 }
 
-// 888/2334 expressed as a percentage for the padding-bottom aspect-ratio trick
-const ASPECT_PCT = (888 / 2334) * 100  // ≈ 38.05%
+// 847/2334 expressed as a percentage for the padding-bottom aspect-ratio trick
+const ASPECT_PCT = (847 / 2334) * 100  // ≈ 36.29%
 
 function itemCount(inv, id) {
   return (inv[id] || []).reduce((s, i) => s + i.qty, 0)
