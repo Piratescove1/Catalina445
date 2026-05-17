@@ -198,6 +198,48 @@ html, body, #root {
   width: 100%;
 }
 
+/* ── Inventory sub-tabs ────────────────────────────────── */
+.inv-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--navy-light);
+  background: var(--navy-mid);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.inv-tab {
+  flex: 1;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--cream-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.inv-tab--active {
+  color: var(--brass);
+  border-bottom-color: var(--brass);
+}
+
+.locker-area-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  padding: 10px 16px 4px;
+  background: var(--navy);
+  border-top: 1px solid var(--navy-light);
+}
+
 /* ── Maintenance log ───────────────────────────────────── */
 .maint-card {
   background: var(--navy-mid);

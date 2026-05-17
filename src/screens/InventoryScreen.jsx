@@ -2,23 +2,29 @@ import { useState, useCallback } from 'react'
 import { COMPARTMENTS } from '../data/compartments'
 import BoatDiagram from '../components/BoatDiagram'
 import CompartmentModal from '../components/CompartmentModal'
+import LockerDiagram from '../components/LockerDiagram'
+import LockerModal from '../components/LockerModal'
 import VoiceButton from '../components/VoiceButton'
 
-export default function InventoryScreen({ boatName, inventory, addItem, removeItem, setItemQty, deleteItem, findItem }) {
+export default function InventoryScreen({
+  boatName,
+  inventory, addItem, removeItem, setItemQty, deleteItem, findItem,
+  lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem,
+}) {
+  const [tab, setTab]         = useState('compartments')  // 'compartments' | 'lockers'
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState('')
 
-  const flash = (msg) => {
-    setFeedback(msg)
-    setTimeout(() => setFeedback(''), 4000)
-  }
+  const flash = (msg) => { setFeedback(msg); setTimeout(() => setFeedback(''), 4000) }
 
   const totalItems = Object.values(inventory).reduce((sum, items) => sum + items.reduce((s, i) => s + i.qty, 0), 0)
   const compartmentsWithItems = Object.values(inventory).filter(items => items.length > 0).length
 
+  const totalLockerItems = Object.values(lockerInventory).reduce((sum, items) => sum + items.reduce((s, i) => s + i.qty, 0), 0)
+  const lockersWithItems = Object.values(lockerInventory).filter(items => items.length > 0).length
+
   const handleGlobalVoice = useCallback((cmd, raw) => {
     if (!cmd) { flash(`Didn't understand: "${raw}"`); return }
-
     switch (cmd.action) {
       case 'remove': {
         const results = findItem(cmd.item)
@@ -35,7 +41,7 @@ export default function InventoryScreen({ boatName, inventory, addItem, removeIt
           if (!comp) { flash(`Compartment ${cmd.compartmentNum} not found`); return }
           addItem(comp.id, cmd.item, cmd.qty)
           flash(`✓ Added ${cmd.qty} × ${cmd.item} to ${comp.name}`)
-        } else if (selected) {
+        } else if (selected && tab === 'compartments') {
           addItem(selected, cmd.item, cmd.qty)
           const comp = COMPARTMENTS.find(c => c.id === selected)
           flash(`✓ Added ${cmd.qty} × ${cmd.item} to ${comp?.name}`)
@@ -58,31 +64,66 @@ export default function InventoryScreen({ boatName, inventory, addItem, removeIt
       default:
         flash(`Not handled here: "${raw}"`)
     }
-  }, [selected, findItem, addItem, removeItem])
+  }, [selected, tab, findItem, addItem, removeItem])
+
+  const handleTabChange = (t) => { setTab(t); setSelected(null) }
 
   return (
     <div className="screen">
       <header className="screen-header">
         <div>
           <h1 className="screen-title">{boatName || 'Catalina 445'}</h1>
-          <p className="screen-subtitle">{totalItems} items · {compartmentsWithItems} compartments stocked</p>
+          <p className="screen-subtitle">
+            {tab === 'compartments'
+              ? `${totalItems} items · ${compartmentsWithItems} compartments stocked`
+              : `${totalLockerItems} items · ${lockersWithItems} lockers stocked`
+            }
+          </p>
         </div>
-        <VoiceButton
-          onCommand={handleGlobalVoice}
-          context='Try: "remove 6 beans" · "add 3 flares to compartment 5" · "check flares"'
-        />
+        {tab === 'compartments' && (
+          <VoiceButton
+            onCommand={handleGlobalVoice}
+            context='Try: "remove 6 beans" · "add 3 flares to compartment 5" · "check flares"'
+          />
+        )}
       </header>
+
       {feedback && <div className="global-feedback">{feedback}</div>}
 
-      <div className="screen-body">
-        <BoatDiagram
-          inventory={inventory}
-          onSelect={setSelected}
-          selected={selected}
-        />
+      {/* Sub-tabs */}
+      <div className="inv-tabs">
+        <button
+          className={`inv-tab ${tab === 'compartments' ? 'inv-tab--active' : ''}`}
+          onClick={() => handleTabChange('compartments')}
+        >
+          Compartments
+        </button>
+        <button
+          className={`inv-tab ${tab === 'lockers' ? 'inv-tab--active' : ''}`}
+          onClick={() => handleTabChange('lockers')}
+        >
+          Lockers &amp; Drawers
+        </button>
       </div>
 
-      {selected && (
+      <div className="screen-body">
+        {tab === 'compartments' && (
+          <BoatDiagram
+            inventory={inventory}
+            onSelect={setSelected}
+            selected={selected}
+          />
+        )}
+        {tab === 'lockers' && (
+          <LockerDiagram
+            lockerInventory={lockerInventory}
+            onSelect={setSelected}
+            selected={selected}
+          />
+        )}
+      </div>
+
+      {tab === 'compartments' && selected && (
         <CompartmentModal
           compartmentId={selected}
           inventory={inventory}
@@ -92,6 +133,18 @@ export default function InventoryScreen({ boatName, inventory, addItem, removeIt
           onSetQty={setItemQty}
           onDeleteItem={deleteItem}
           onFindItem={findItem}
+        />
+      )}
+
+      {tab === 'lockers' && selected && (
+        <LockerModal
+          lockerId={selected}
+          lockerInventory={lockerInventory}
+          onClose={() => setSelected(null)}
+          onAddItem={addLockerItem}
+          onRemoveItem={removeLockerItem}
+          onSetQty={setLockerItemQty}
+          onDeleteItem={deleteLockerItem}
         />
       )}
     </div>

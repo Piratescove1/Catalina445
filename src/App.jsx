@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
 import { useDitchBag } from './hooks/useDitchBag'
+import { useLockers } from './hooks/useLockers'
 import { usePrefs } from './hooks/usePrefs'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
@@ -29,6 +30,11 @@ export default function App() {
   const { prefs, setPref } = usePrefs()
 
   const {
+    lockerInventory, addLockerItem, removeLockerItem,
+    setLockerItemQty, deleteLockerItem, importLockers,
+  } = useLockers()
+
+  const {
     inventory, voyages, activeVoyage,
     addItem, removeItem, setItemQty, deleteItem, findItem,
     startVoyage, endVoyage, resumeVoyage, renameVoyage,
@@ -49,21 +55,22 @@ export default function App() {
     togglePacked, importDitchBag,
   } = useDitchBag()
 
-  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote) => {
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers) => {
     importData(inv, voy)
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
-  }, [importData, importMaintenance, importDitchBag])
+    importLockers(lockers)
+  }, [importData, importMaintenance, importDitchBag, importLockers])
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
-    ditchSop: sop, ditchItems, onRemoteData,
+    ditchSop: sop, ditchItems, lockerInventory, onRemoteData,
   })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems)
-  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory])
 
   return (
     <div className="app">
@@ -136,6 +143,11 @@ export default function App() {
           setItemQty={setItemQty}
           deleteItem={deleteItem}
           findItem={findItem}
+          lockerInventory={lockerInventory}
+          addLockerItem={addLockerItem}
+          removeLockerItem={removeLockerItem}
+          setLockerItemQty={setLockerItemQty}
+          deleteLockerItem={deleteLockerItem}
         />
       )}
       {screen === 'voyage' && (
