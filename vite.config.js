@@ -8,4 +8,12 @@ export default defineConfig({
     host: true,
     https: true,
   },
+  optimizeDeps: {
+    include: ['firebase/app', 'firebase/firestore'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/firebase/, /node_modules/],
+    },
+  },
 })
