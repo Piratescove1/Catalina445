@@ -143,7 +143,7 @@ export default function App() {
   } = useDitchBag()
 
   const {
-    items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
+    items: provItems, toggleItem: toggleProvItem, toggleGot: toggleProvGot, addItem: addProvItem,
     deleteItem: deleteProvItem, renameItem: renameProvItem, moveItem: moveProvItem,
     clearList: clearProvList, resetDefaults: resetProvDefaults,
     categories: provCategories,
@@ -297,6 +297,7 @@ export default function App() {
           items={provItems}
           categories={provCategories}
           toggleItem={toggleProvItem}
+          toggleGot={toggleProvGot}
           addItem={addProvItem}
           deleteItem={deleteProvItem}
           renameItem={renameProvItem}

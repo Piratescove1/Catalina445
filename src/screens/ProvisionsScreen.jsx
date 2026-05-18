@@ -84,7 +84,7 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   )
 }
 
-export default function ProvisionsScreen({ items, categories, toggleItem, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults }) {
+export default function ProvisionsScreen({ items, categories, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults }) {
   const [showListOnly, setShowListOnly] = useState(false)
   const [editMode,     setEditMode]     = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -160,7 +160,11 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
         )}
 
         {visibleCats.map(cat => {
-          const catItems = displayed.filter(it => it.category === cat)
+          let catItems = displayed.filter(it => it.category === cat)
+          // In shopping list view, show ungot items first so checked-off items sink to the bottom
+          if (showListOnly && !editMode) {
+            catItems = [...catItems].sort((a, b) => (a.got ? 1 : 0) - (b.got ? 1 : 0))
+          }
           return (
             <div key={cat}>
               <p className="prov-category-header">{cat}</p>
@@ -178,12 +182,25 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
                     onMove={moveItem}
                     onDelete={deleteItem}
                   />
+                ) : showListOnly ? (
+                  // Shopping list view: checkbox = "I got this at the store"
+                  <div key={item.id} className={`prov-item ${item.got ? 'prov-item--got' : ''}`}>
+                    <button
+                      className={`prov-check ${item.got ? 'prov-check--on' : ''}`}
+                      onClick={() => toggleGot(item.id)}
+                      aria-label={item.got ? 'Unmark as got' : 'Mark as got'}
+                    >
+                      {item.got ? '✓' : ''}
+                    </button>
+                    <span className="prov-name">{item.name}</span>
+                  </div>
                 ) : (
+                  // All items view: checkbox = "add to shopping list"
                   <div key={item.id} className={`prov-item ${item.checked ? 'prov-item--checked' : ''}`}>
                     <button
                       className={`prov-check ${item.checked ? 'prov-check--on' : ''}`}
                       onClick={() => toggleItem(item.id)}
-                      aria-label={item.checked ? 'Remove from list' : 'Add to list'}
+                      aria-label={item.checked ? 'Remove from list' : 'Add to shopping list'}
                     >
                       {item.checked ? '✓' : ''}
                     </button>

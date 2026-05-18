@@ -5,7 +5,7 @@ const ITEMS_KEY = 'c445-provisions'
 const CATS_KEY  = 'c445-prov-categories'
 
 function defaultItems() {
-  return COMMON_PROVISIONS.map(p => ({ ...p, checked: false }))
+  return COMMON_PROVISIONS.map(p => ({ ...p, checked: false, got: false }))
 }
 
 // Default category order: My Items first, then the built-in list
@@ -45,7 +45,7 @@ export function useProvisions() {
   const addItem = useCallback((name, category = 'My Items') => {
     if (!name.trim()) return
     setItems(prev => {
-      const next = [...prev, { id: Date.now(), name: name.trim(), category, checked: false, custom: true }]
+      const next = [...prev, { id: Date.now(), name: name.trim(), category, checked: false, got: false, custom: true }]
       save(ITEMS_KEY, next)
       return next
     })
@@ -87,9 +87,17 @@ export function useProvisions() {
     })
   }, [])
 
+  const toggleGot = useCallback((id) => {
+    setItems(prev => {
+      const next = prev.map(it => it.id === id ? { ...it, got: !it.got } : it)
+      save(ITEMS_KEY, next)
+      return next
+    })
+  }, [])
+
   const clearList = useCallback(() => {
     setItems(prev => {
-      const next = prev.map(it => ({ ...it, checked: false }))
+      const next = prev.map(it => ({ ...it, checked: false, got: false }))
       save(ITEMS_KEY, next)
       return next
     })
@@ -165,7 +173,7 @@ export function useProvisions() {
   }, [])
 
   return {
-    items, toggleItem, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults,
+    items, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults,
     categories, addCategory, deleteCategory, renameCategory, moveCategory,
     importProvisions,
   }
