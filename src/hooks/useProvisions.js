@@ -59,6 +59,34 @@ export function useProvisions() {
     })
   }, [])
 
+  const renameItem = useCallback((id, newName) => {
+    if (!newName.trim()) return
+    setItems(prev => {
+      const next = prev.map(it => it.id === id ? { ...it, name: newName.trim() } : it)
+      save(ITEMS_KEY, next)
+      return next
+    })
+  }, [])
+
+  const moveItem = useCallback((id, direction) => {
+    setItems(prev => {
+      const item = prev.find(it => it.id === id)
+      if (!item) return prev
+      // Work within the same category's slice
+      const catItems = prev.filter(it => it.category === item.category)
+      const catIdx   = catItems.findIndex(it => it.id === id)
+      const target   = catIdx + direction
+      if (target < 0 || target >= catItems.length) return prev
+      // Swap in the flat array using global indices
+      const next      = [...prev]
+      const idxA      = next.indexOf(item)
+      const idxB      = next.indexOf(catItems[target])
+      ;[next[idxA], next[idxB]] = [next[idxB], next[idxA]]
+      save(ITEMS_KEY, next)
+      return next
+    })
+  }, [])
+
   const clearList = useCallback(() => {
     setItems(prev => {
       const next = prev.map(it => ({ ...it, checked: false }))
@@ -133,7 +161,7 @@ export function useProvisions() {
   }, [])
 
   return {
-    items, toggleItem, addItem, deleteItem, clearList, resetDefaults,
+    items, toggleItem, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults,
     categories, addCategory, deleteCategory, renameCategory, moveCategory,
     importProvisions,
   }

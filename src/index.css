@@ -2076,6 +2076,23 @@ html, body, #root {
   background: rgba(196,148,58,0.07);
 }
 
+.prov-item--edit-mode {
+  gap: 8px;
+}
+
+.prov-item--editing {
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.03);
+}
+
+.prov-item-rename-input {
+  flex: 1;
+  padding: 5px 8px !important;
+  min-height: 34px !important;
+  font-size: 0.85rem !important;
+}
+
 .prov-check {
   width: 26px;
   height: 26px;

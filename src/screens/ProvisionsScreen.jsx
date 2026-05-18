@@ -31,6 +31,61 @@ function AddItemRow({ allCategories, onAdd }) {
   )
 }
 
+// Single item row — normal (shopping) mode
+function ItemRow({ item, onToggle }) {
+  return (
+    <div className={`prov-item ${item.checked ? 'prov-item--checked' : ''}`}>
+      <button
+        className={`prov-check ${item.checked ? 'prov-check--on' : ''}`}
+        onClick={() => onToggle(item.id)}
+        aria-label={item.checked ? 'Remove from list' : 'Add to list'}
+      >
+        {item.checked ? '✓' : ''}
+      </button>
+      <span className="prov-name">{item.name}</span>
+    </div>
+  )
+}
+
+// Single item row — edit mode (rename / reorder / delete)
+function EditItemRow({ item, isFirst, isLast, onRename, onMove, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [draft,   setDraft]   = useState(item.name)
+
+  const commitRename = () => {
+    if (draft.trim()) onRename(item.id, draft.trim())
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="prov-item prov-item--editing">
+        <input
+          className="add-input prov-item-rename-input"
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditing(false) }}
+          autoFocus
+        />
+        <button className="prov-cat-action prov-cat-action--save" onClick={commitRename}>Save</button>
+        <button className="prov-cat-action" onClick={() => setEditing(false)}>Cancel</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="prov-item prov-item--edit-mode">
+      <div className="prov-cat-arrows">
+        <button className="prov-cat-arrow" onClick={() => onMove(item.id, -1)} disabled={isFirst} aria-label="Move up">▲</button>
+        <button className="prov-cat-arrow" onClick={() => onMove(item.id,  1)} disabled={isLast}  aria-label="Move down">▼</button>
+      </div>
+      <span className="prov-name">{item.name}</span>
+      <button className="prov-cat-action" onClick={() => { setDraft(item.name); setEditing(true) }}>Rename</button>
+      <button className="prov-delete prov-delete--visible" onClick={() => onDelete(item.id)} aria-label="Delete">✕</button>
+    </div>
+  )
+}
+
 function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   return (
     <div className="dialog-overlay">
@@ -46,22 +101,21 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   )
 }
 
-export default function ProvisionsScreen({ items, categories, toggleItem, addItem, deleteItem, clearList, resetDefaults }) {
+export default function ProvisionsScreen({ items, categories, toggleItem, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults }) {
   const [showListOnly, setShowListOnly] = useState(false)
   const [editMode,     setEditMode]     = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const checkedCount = items.filter(it => it.checked).length
-
-  const displayed      = showListOnly ? items.filter(it => it.checked) : items
-  const visibleCats    = categories.filter(cat => displayed.some(it => it.category === cat))
+  const displayed    = showListOnly ? items.filter(it => it.checked) : items
+  const visibleCats  = categories.filter(cat => displayed.some(it => it.category === cat))
 
   return (
     <div className="screen">
       {confirmReset && (
         <ConfirmDialog
           title="Restore Default List?"
-          body="This will remove all custom items and restore all original items unchecked. Your shopping list will be cleared."
+          body="This will remove all custom items and restore all original items unchecked. Your shopping list and any custom items will be cleared."
           confirmLabel="Yes, restore defaults"
           onConfirm={() => { setConfirmReset(false); resetDefaults() }}
           onCancel={() => setConfirmReset(false)}
@@ -92,7 +146,7 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
 
       {editMode && (
         <div className="prov-edit-bar">
-          <span className="prov-edit-hint">Tap ✕ to remove any item</span>
+          <span className="prov-edit-hint">Rename, reorder or delete any item</span>
           <button className="prov-reset-btn" onClick={() => setConfirmReset(true)}>Restore defaults</button>
         </div>
       )}
@@ -121,27 +175,21 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
           return (
             <div key={cat}>
               <p className="prov-category-header">{cat}</p>
-              {catItems.map(item => (
-                <div key={item.id} className={`prov-item ${item.checked ? 'prov-item--checked' : ''}`}>
-                  {!editMode && (
-                    <button
-                      className={`prov-check ${item.checked ? 'prov-check--on' : ''}`}
-                      onClick={() => toggleItem(item.id)}
-                      aria-label={item.checked ? 'Remove from list' : 'Add to list'}
-                    >
-                      {item.checked ? '✓' : ''}
-                    </button>
-                  )}
-                  <span className="prov-name">{item.name}</span>
-                  {editMode && (
-                    <button
-                      className="prov-delete prov-delete--visible"
-                      onClick={() => deleteItem(item.id)}
-                      aria-label="Delete item"
-                    >✕</button>
-                  )}
-                </div>
-              ))}
+              {catItems.map((item, idx) =>
+                editMode ? (
+                  <EditItemRow
+                    key={item.id}
+                    item={item}
+                    isFirst={idx === 0}
+                    isLast={idx === catItems.length - 1}
+                    onRename={renameItem}
+                    onMove={moveItem}
+                    onDelete={deleteItem}
+                  />
+                ) : (
+                  <ItemRow key={item.id} item={item} onToggle={toggleItem} />
+                )
+              )}
             </div>
           )
         })}

@@ -144,7 +144,8 @@ export default function App() {
 
   const {
     items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
-    deleteItem: deleteProvItem, clearList: clearProvList, resetDefaults: resetProvDefaults,
+    deleteItem: deleteProvItem, renameItem: renameProvItem, moveItem: moveProvItem,
+    clearList: clearProvList, resetDefaults: resetProvDefaults,
     categories: provCategories,
     addCategory: addProvCat, deleteCategory: deleteProvCat,
     renameCategory: renameProvCat, moveCategory: moveProvCat,
@@ -298,6 +299,8 @@ export default function App() {
           toggleItem={toggleProvItem}
           addItem={addProvItem}
           deleteItem={deleteProvItem}
+          renameItem={renameProvItem}
+          moveItem={moveProvItem}
           clearList={clearProvList}
           resetDefaults={resetProvDefaults}
         />
