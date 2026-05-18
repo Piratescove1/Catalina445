@@ -156,8 +156,12 @@ export function useProvisions() {
 
   // ── Sync import ────────────────────────────────────────
   const importProvisions = useCallback((remoteItems, remoteCats) => {
-    if (remoteItems) { setItems(remoteItems); save(ITEMS_KEY, remoteItems) }
-    if (remoteCats)  { setCats(remoteCats);   save(CATS_KEY,  remoteCats)  }
+    if (Array.isArray(remoteItems) && remoteItems.length > 0) {
+      setItems(remoteItems); save(ITEMS_KEY, remoteItems)
+    }
+    if (Array.isArray(remoteCats) && remoteCats.length > 0) {
+      setCats(remoteCats); save(CATS_KEY, remoteCats)
+    }
   }, [])
 
   return {

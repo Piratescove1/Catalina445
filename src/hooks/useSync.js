@@ -102,20 +102,20 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
       setStatus('syncing')
       try {
         await setDoc(doc(db, 'boats', boatId), {
-          inventory: inv,
-          voyages: voy,
-          maintenance: maint,
-          futureProjects: future,
-          ditchSop: dSop,
-          ditchItems: dItems,
-          lockerInventory: lockers,
-          provItems: prov,
-          provCategories: provCats,
+          inventory:       inv      || [],
+          voyages:         voy      || [],
+          maintenance:     maint    || [],
+          futureProjects:  future   || [],
+          ditchSop:        dSop     || '',
+          ditchItems:      dItems   || [],
+          lockerInventory: lockers  || {},
+          provItems:       prov     || [],
+          provCategories:  provCats || [],
           deviceId: DEVICE_ID,
           updatedAt: Date.now(),
         })
         setStatus('synced')
-      } catch { setStatus('offline') }
+      } catch (e) { console.error('Firestore push failed:', e); setStatus('offline') }
     }, 1500)
   }, [boatId, pendingSync])
 
@@ -128,20 +128,20 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
       setStatus('syncing')
       try {
         await setDoc(doc(db, 'boats', boatId), {
-          inventory: inv,
-          voyages: voy,
-          maintenance: maint,
-          futureProjects: future,
-          ditchSop: dSop,
-          ditchItems: dItems,
-          lockerInventory: lockers,
-          provItems: prov,
-          provCategories: provCats,
+          inventory:       inv      || [],
+          voyages:         voy      || [],
+          maintenance:     maint    || [],
+          futureProjects:  future   || [],
+          ditchSop:        dSop     || '',
+          ditchItems:      dItems   || [],
+          lockerInventory: lockers  || {},
+          provItems:       prov     || [],
+          provCategories:  provCats || [],
           deviceId: DEVICE_ID,
           updatedAt: Date.now(),
         })
         setStatus('synced')
-      } catch { setStatus('offline') }
+      } catch (e) { console.error('Firestore resolveSync failed:', e); setStatus('offline') }
     } else {
       setStatus('connecting')
       try {

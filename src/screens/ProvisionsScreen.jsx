@@ -92,8 +92,13 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
   const checkedCount = items.filter(it => it.checked).length
 
   // In edit mode always show everything so nothing is accidentally hidden
-  const displayed   = editMode ? items : (showListOnly ? items.filter(it => it.checked) : items)
-  const visibleCats = categories.filter(cat => displayed.some(it => it.category === cat))
+  const displayed = editMode ? items : (showListOnly ? items.filter(it => it.checked) : items)
+
+  // Shopping list: only categories with checked items
+  // All items / edit mode: always show every category (even empty ones, so you can add to them)
+  const visibleCats = (showListOnly && !editMode)
+    ? categories.filter(cat => displayed.some(it => it.category === cat))
+    : categories
 
   return (
     <div className="screen">
@@ -156,10 +161,12 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
 
         {visibleCats.map(cat => {
           const catItems = displayed.filter(it => it.category === cat)
-          if (!catItems.length) return null
           return (
             <div key={cat}>
               <p className="prov-category-header">{cat}</p>
+              {catItems.length === 0 && (
+                <p className="prov-cat-empty-hint">No items — add one using the form below</p>
+              )}
               {catItems.map((item, idx) =>
                 editMode ? (
                   <EditItemRow

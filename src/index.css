@@ -2223,6 +2223,14 @@ html, body, #root {
   line-height: 1.5;
 }
 
+.prov-cat-empty-hint {
+  padding: 8px 16px 10px;
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+  opacity: 0.5;
+  font-style: italic;
+}
+
 /* ── iPad / tablet layout (768px+) ────────────────────── */
 @media (min-width: 768px) {
 
