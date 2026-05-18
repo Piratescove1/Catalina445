@@ -85,9 +85,10 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
 }
 
 export default function ProvisionsScreen({ items, categories, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults }) {
-  const [showListOnly, setShowListOnly] = useState(false)
-  const [editMode,     setEditMode]     = useState(false)
-  const [confirmReset, setConfirmReset] = useState(false)
+  const [showListOnly,  setShowListOnly]  = useState(false)
+  const [editMode,      setEditMode]      = useState(false)
+  const [confirmReset,  setConfirmReset]  = useState(false)
+  const [confirmClear,  setConfirmClear]  = useState(false)
 
   const checkedCount = items.filter(it => it.checked).length
 
@@ -102,6 +103,16 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
 
   return (
     <div className="screen">
+      {confirmClear && (
+        <ConfirmDialog
+          title="Clear Shopping List?"
+          body="This will uncheck all items and remove any 'got' marks. Your item list will not change."
+          confirmLabel="Yes, clear list"
+          onConfirm={() => { setConfirmClear(false); clearList() }}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
+
       {confirmReset && (
         <ConfirmDialog
           title="Restore Default List?"
@@ -125,7 +136,7 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {checkedCount > 0 && !editMode && (
-            <button className="prov-clear-btn" onClick={clearList}>Clear list</button>
+            <button className="prov-clear-btn" onClick={() => setConfirmClear(true)}>Clear list</button>
           )}
           <button
             className={`prov-edit-btn ${editMode ? 'prov-edit-btn--active' : ''}`}
