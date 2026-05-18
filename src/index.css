@@ -1870,6 +1870,65 @@ html, body, #root {
   color: var(--brass);
 }
 
+.prov-edit-btn {
+  background: none;
+  border: 1px solid var(--navy-light);
+  border-radius: 8px;
+  color: var(--cream-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.prov-edit-btn--active {
+  border-color: var(--brass);
+  color: var(--brass);
+  background: rgba(196,148,58,0.1);
+}
+
+.prov-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(196,148,58,0.08);
+  border-bottom: 1px solid rgba(196,148,58,0.2);
+  flex-shrink: 0;
+}
+
+.prov-edit-hint {
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+  font-style: italic;
+}
+
+.prov-reset-btn {
+  background: none;
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream-dim);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.prov-reset-btn:active { opacity: 0.7; }
+
+.prov-cat-select {
+  background: var(--navy-light);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--cream);
+  font-size: 0.82rem;
+  padding: 10px 8px;
+  min-height: 44px;
+  flex-shrink: 0;
+  width: 130px;
+}
+
 .prov-clear-btn {
   background: none;
   border: 1px solid var(--brass-dim);
@@ -1950,7 +2009,19 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-.prov-delete:active { opacity: 1; color: var(--red); }
+.prov-delete--visible {
+  opacity: 0.8;
+  color: #f87171;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prov-delete--visible:active { opacity: 1; color: var(--red); }
 
 .prov-add-row {
   display: flex;

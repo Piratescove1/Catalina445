@@ -60,7 +60,8 @@ export default function App() {
 
   const {
     items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
-    deleteItem: deleteProvItem, clearList: clearProvList, importProvisions,
+    deleteItem: deleteProvItem, clearList: clearProvList, resetDefaults: resetProvDefaults,
+    importProvisions,
   } = useProvisions()
 
   const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions) => {
@@ -201,6 +202,7 @@ export default function App() {
           addItem={addProvItem}
           deleteItem={deleteProvItem}
           clearList={clearProvList}
+          resetDefaults={resetProvDefaults}
         />
       )}
       {screen === 'ditchbag' && (

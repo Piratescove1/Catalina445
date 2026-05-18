@@ -30,10 +30,10 @@ export function useProvisions() {
     })
   }, [])
 
-  const addItem = useCallback((name) => {
+  const addItem = useCallback((name, category = 'My Items') => {
     if (!name.trim()) return
     setItems(prev => {
-      const next = [...prev, { id: Date.now(), name: name.trim(), category: 'My Items', checked: true, custom: true }]
+      const next = [...prev, { id: Date.now(), name: name.trim(), category, checked: false, custom: true }]
       save(next)
       return next
     })
@@ -55,9 +55,15 @@ export function useProvisions() {
     })
   }, [])
 
+  const resetDefaults = useCallback(() => {
+    const next = defaultItems()
+    setItems(next)
+    save(next)
+  }, [])
+
   const importProvisions = useCallback((remote) => {
     if (remote) { setItems(remote); save(remote) }
   }, [])
 
-  return { items, toggleItem, addItem, deleteItem, clearList, importProvisions }
+  return { items, toggleItem, addItem, deleteItem, clearList, resetDefaults, importProvisions }
 }
