@@ -28,9 +28,6 @@ const POSITIONS = {
   'lock-23': { px: 23.0, py: 55.0 },
 }
 
-// 847/2334 expressed as a percentage for the padding-bottom aspect-ratio trick
-const ASPECT_PCT = (847 / 2334) * 100  // ≈ 36.29%
-
 function itemCount(inv, id) {
   return (inv[id] || []).reduce((s, i) => s + i.qty, 0)
 }
@@ -52,8 +49,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
             position: 'relative',
             width: '100%',
             minWidth: 800,
-            paddingBottom: `${ASPECT_PCT}%`,
-            height: 0,
+            aspectRatio: '2334 / 847',
           }}
         >
           <img

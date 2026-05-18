@@ -2323,3 +2323,43 @@ html, body, #root {
     grid-column: 1 / -1;
   }
 }
+
+/* ── iPhone: navbar moves to top (Safari toolbar is at the bottom) ── */
+@media (max-width: 767px) {
+
+  /* Flip navbar from bottom to top */
+  .navbar {
+    top: env(safe-area-inset-top);
+    bottom: auto;
+    height: calc(var(--nav-h) + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: 0;
+    border-top: none;
+    border-bottom: 1px solid rgba(196, 148, 58, 0.35);
+    box-shadow: 0 1px 0 rgba(196,148,58,0.12), 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  /* Brass shimmer flips to the bottom edge of the navbar */
+  .navbar::before {
+    top: auto;
+    bottom: 0;
+  }
+
+  /* Active-tab indicator flips to the bottom edge of each button */
+  .nav-indicator {
+    top: auto;
+    bottom: 0;
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* Sync bar sits directly below the navbar */
+  .sync-bar {
+    top: calc(env(safe-area-inset-top) + var(--nav-h));
+  }
+
+  /* Screen: navbar + sync bar are both at the top now; nothing at bottom */
+  .screen {
+    padding-top: calc(env(safe-area-inset-top) + var(--nav-h) + 28px);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

@@ -27,9 +27,6 @@ const POSITIONS = {
   23: { px: 11.6, py: 46.0 },
 }
 
-// 1275/2707 expressed as a percentage for the padding-bottom aspect-ratio trick
-const ASPECT_PCT = (1275 / 2707) * 100  // ≈ 47.09%
-
 function itemCount(inventory, id) {
   return (inventory[id] || []).reduce((s, i) => s + i.qty, 0)
 }
@@ -44,8 +41,7 @@ export default function BoatDiagram({ inventory, onSelect, selected }) {
             position: 'relative',
             width: '100%',
             minWidth: 1100,
-            paddingBottom: `${ASPECT_PCT}%`,
-            height: 0,
+            aspectRatio: '2707 / 1275',
           }}
         >
           <img
