@@ -48,7 +48,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
           style={{
             position: 'relative',
             width: '100%',
-            minWidth: 800,
+            minWidth: 1000,
             aspectRatio: '2334 / 847',
           }}
         >

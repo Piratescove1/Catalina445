@@ -40,7 +40,7 @@ export default function BoatDiagram({ inventory, onSelect, selected }) {
           style={{
             position: 'relative',
             width: '100%',
-            minWidth: 1100,
+            minWidth: 1000,
             aspectRatio: '2707 / 810',
           }}
         >
