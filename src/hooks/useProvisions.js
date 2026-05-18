@@ -27,7 +27,11 @@ function save(key, data) {
 
 export function useProvisions() {
   const [items,      setItems] = useState(() => load(ITEMS_KEY, defaultItems()))
-  const [categories, setCats]  = useState(() => load(CATS_KEY,  defaultCategories()))
+  const [categories, setCats]  = useState(() => {
+    const stored = load(CATS_KEY, null)
+    // Migrate: old format stored [] (custom-only); treat empty array as unset
+    return (stored && stored.length > 0) ? stored : defaultCategories()
+  })
 
   // ── Item operations ────────────────────────────────────
   const toggleItem = useCallback((id) => {
