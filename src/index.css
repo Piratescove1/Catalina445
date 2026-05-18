@@ -1980,21 +1980,22 @@ html, body, #root {
 }
 
 .prov-edit-btn {
-  background: none;
-  border: 1px solid var(--navy-light);
+  background: var(--navy-light);
+  border: 1px solid var(--brass-dim);
   border-radius: 8px;
-  color: var(--cream-dim);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 6px 14px;
+  color: var(--brass);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 16px;
   cursor: pointer;
   white-space: nowrap;
+  min-height: 38px;
 }
 
 .prov-edit-btn--active {
+  background: var(--brass);
   border-color: var(--brass);
-  color: var(--brass);
-  background: rgba(196,148,58,0.1);
+  color: var(--navy);
 }
 
 .prov-edit-bar {
@@ -2078,19 +2079,76 @@ html, body, #root {
 
 .prov-item--edit-mode {
   gap: 8px;
+  background: rgba(255,255,255,0.02);
 }
 
 .prov-item--editing {
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(255,255,255,0.03);
+  flex-wrap: wrap;
+  background: rgba(196,148,58,0.06);
+  border-bottom: 1px solid rgba(196,148,58,0.15);
 }
 
 .prov-item-rename-input {
   flex: 1;
-  padding: 5px 8px !important;
-  min-height: 34px !important;
-  font-size: 0.85rem !important;
+  min-width: 120px;
+  padding: 6px 10px !important;
+  min-height: 36px !important;
+  font-size: 0.88rem !important;
+}
+
+/* Reorder arrows inside item rows */
+.prov-reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.prov-reorder-btn {
+  background: var(--navy-light);
+  border: 1px solid var(--navy-light);
+  border-radius: 4px;
+  color: var(--cream-dim);
+  font-size: 0.55rem;
+  line-height: 1;
+  padding: 3px 5px;
+  cursor: pointer;
+  min-width: 22px;
+  text-align: center;
+}
+
+.prov-reorder-btn:disabled { opacity: 0.2; cursor: default; }
+.prov-reorder-btn:not(:disabled):active { background: var(--brass); border-color: var(--brass); color: var(--navy); }
+
+/* Inline action buttons (Rename / Save / Cancel / ✕) */
+.prov-action-btn {
+  background: var(--navy-light);
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 30px;
+  flex-shrink: 0;
+}
+
+.prov-action-btn--save {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+  background: rgba(196,148,58,0.12);
+}
+
+.prov-action-btn--del {
+  color: #f87171;
+  background: rgba(248,113,113,0.08);
+  border-color: rgba(248,113,113,0.3);
+  font-size: 0.85rem;
+  padding: 5px 9px;
 }
 
 .prov-check {

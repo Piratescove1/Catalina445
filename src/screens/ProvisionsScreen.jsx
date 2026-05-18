@@ -31,28 +31,11 @@ function AddItemRow({ allCategories, onAdd }) {
   )
 }
 
-// Single item row — normal (shopping) mode
-function ItemRow({ item, onToggle }) {
-  return (
-    <div className={`prov-item ${item.checked ? 'prov-item--checked' : ''}`}>
-      <button
-        className={`prov-check ${item.checked ? 'prov-check--on' : ''}`}
-        onClick={() => onToggle(item.id)}
-        aria-label={item.checked ? 'Remove from list' : 'Add to list'}
-      >
-        {item.checked ? '✓' : ''}
-      </button>
-      <span className="prov-name">{item.name}</span>
-    </div>
-  )
-}
-
-// Single item row — edit mode (rename / reorder / delete)
 function EditItemRow({ item, isFirst, isLast, onRename, onMove, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState(item.name)
 
-  const commitRename = () => {
+  const commit = () => {
     if (draft.trim()) onRename(item.id, draft.trim())
     setEditing(false)
   }
@@ -64,24 +47,24 @@ function EditItemRow({ item, isFirst, isLast, onRename, onMove, onDelete }) {
           className="add-input prov-item-rename-input"
           value={draft}
           onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditing(false) }}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
           autoFocus
         />
-        <button className="prov-cat-action prov-cat-action--save" onClick={commitRename}>Save</button>
-        <button className="prov-cat-action" onClick={() => setEditing(false)}>Cancel</button>
+        <button className="prov-action-btn prov-action-btn--save" onClick={commit}>Save</button>
+        <button className="prov-action-btn" onClick={() => setEditing(false)}>Cancel</button>
       </div>
     )
   }
 
   return (
     <div className="prov-item prov-item--edit-mode">
-      <div className="prov-cat-arrows">
-        <button className="prov-cat-arrow" onClick={() => onMove(item.id, -1)} disabled={isFirst} aria-label="Move up">▲</button>
-        <button className="prov-cat-arrow" onClick={() => onMove(item.id,  1)} disabled={isLast}  aria-label="Move down">▼</button>
+      <div className="prov-reorder-btns">
+        <button className="prov-reorder-btn" onClick={() => onMove(item.id, -1)} disabled={isFirst} aria-label="Move up">▲</button>
+        <button className="prov-reorder-btn" onClick={() => onMove(item.id,  1)} disabled={isLast}  aria-label="Move down">▼</button>
       </div>
       <span className="prov-name">{item.name}</span>
-      <button className="prov-cat-action" onClick={() => { setDraft(item.name); setEditing(true) }}>Rename</button>
-      <button className="prov-delete prov-delete--visible" onClick={() => onDelete(item.id)} aria-label="Delete">✕</button>
+      <button className="prov-action-btn" onClick={() => { setDraft(item.name); setEditing(true) }}>Rename</button>
+      <button className="prov-action-btn prov-action-btn--del" onClick={() => onDelete(item.id)}>✕</button>
     </div>
   )
 }
@@ -107,15 +90,17 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
   const [confirmReset, setConfirmReset] = useState(false)
 
   const checkedCount = items.filter(it => it.checked).length
-  const displayed    = showListOnly ? items.filter(it => it.checked) : items
-  const visibleCats  = categories.filter(cat => displayed.some(it => it.category === cat))
+
+  // In edit mode always show everything so nothing is accidentally hidden
+  const displayed   = editMode ? items : (showListOnly ? items.filter(it => it.checked) : items)
+  const visibleCats = categories.filter(cat => displayed.some(it => it.category === cat))
 
   return (
     <div className="screen">
       {confirmReset && (
         <ConfirmDialog
           title="Restore Default List?"
-          body="This will remove all custom items and restore all original items unchecked. Your shopping list and any custom items will be cleared."
+          body="This will remove all custom items and restore all original items unchecked."
           confirmLabel="Yes, restore defaults"
           onConfirm={() => { setConfirmReset(false); resetDefaults() }}
           onCancel={() => setConfirmReset(false)}
@@ -126,9 +111,11 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
         <div>
           <h1 className="screen-title">🛒 Provisions</h1>
           <p className="screen-subtitle">
-            {checkedCount === 0
-              ? 'Check items you need to buy'
-              : `${checkedCount} item${checkedCount !== 1 ? 's' : ''} on shopping list`}
+            {editMode
+              ? 'Tap Rename, ▲▼ to reorder, or ✕ to delete'
+              : checkedCount === 0
+                ? 'Check items you need to buy'
+                : `${checkedCount} item${checkedCount !== 1 ? 's' : ''} on shopping list`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -139,19 +126,17 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
             className={`prov-edit-btn ${editMode ? 'prov-edit-btn--active' : ''}`}
             onClick={() => setEditMode(e => !e)}
           >
-            {editMode ? 'Done' : 'Edit'}
+            {editMode ? 'Done editing' : 'Edit items'}
           </button>
         </div>
       </header>
 
-      {editMode && (
+      {editMode ? (
         <div className="prov-edit-bar">
-          <span className="prov-edit-hint">Rename, reorder or delete any item</span>
+          <span className="prov-edit-hint">Changes save automatically</span>
           <button className="prov-reset-btn" onClick={() => setConfirmReset(true)}>Restore defaults</button>
         </div>
-      )}
-
-      {!editMode && (
+      ) : (
         <div className="prov-filter-row">
           <button
             className={`prov-filter-btn ${!showListOnly ? 'prov-filter-btn--active' : ''}`}
@@ -187,7 +172,16 @@ export default function ProvisionsScreen({ items, categories, toggleItem, addIte
                     onDelete={deleteItem}
                   />
                 ) : (
-                  <ItemRow key={item.id} item={item} onToggle={toggleItem} />
+                  <div key={item.id} className={`prov-item ${item.checked ? 'prov-item--checked' : ''}`}>
+                    <button
+                      className={`prov-check ${item.checked ? 'prov-check--on' : ''}`}
+                      onClick={() => toggleItem(item.id)}
+                      aria-label={item.checked ? 'Remove from list' : 'Add to list'}
+                    >
+                      {item.checked ? '✓' : ''}
+                    </button>
+                    <span className="prov-name">{item.name}</span>
+                  </div>
                 )
               )}
             </div>
