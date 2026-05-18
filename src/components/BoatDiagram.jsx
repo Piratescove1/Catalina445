@@ -1,23 +1,6 @@
-/**
- * BoatDiagram — renders the Catalina 445 floor plan with interactive compartment circles.
- *
- * The boat image (public/boat-plan.png) is extracted from the official PDF.
- * Circle positions (POSITIONS) are stored as % of image dimensions so they
- * stay accurate at any zoom level. A ResizeObserver watches the container and
- * scales the diagram to fill it on iPad, while enforcing a MIN_W on phones
- * (making the diagram horizontally scrollable rather than tiny).
- *
- * Each circle shows the compartment number and a badge with total item count.
- * Circles are gold when stocked, outline-only when empty.
- *
- * Below the diagram, a text list of all compartments provides an alternative
- * tap target and shows item counts.
- */
-import { useRef, useState, useEffect } from 'react'
 import { COMPARTMENTS } from '../data/compartments'
 
-// Circle positions as percentage of image dimensions
-// Detected from yellow sticker positions in 445 Compartments.pdf (OCR + pixel analysis)
+// Circle positions as percentage of image dimensions (2707 × 1275)
 const POSITIONS = {
   1:  { px: 78.9, py: 34.6 },
   2:  { px: 70.6, py: 34.3 },
@@ -44,58 +27,52 @@ const POSITIONS = {
   23: { px: 11.6, py: 46.0 },
 }
 
-// Image aspect ratio: 2707 × 1275 (cropped from 2688 × 1531)
-const ASPECT = 1275 / 2707
-const MIN_W = 1100  // minimum width — scrollable on phone
+// 1275/2707 expressed as a percentage for the padding-bottom aspect-ratio trick
+const ASPECT_PCT = (1275 / 2707) * 100  // ≈ 47.09%
 
 function itemCount(inventory, id) {
   return (inventory[id] || []).reduce((s, i) => s + i.qty, 0)
 }
 
 export default function BoatDiagram({ inventory, onSelect, selected }) {
-  const outerRef = useRef(null)
-  const [dims, setDims] = useState({ w: MIN_W, h: Math.round(MIN_W * ASPECT) })
-
-  useEffect(() => {
-    const el = outerRef.current
-    if (!el) return
-    const observer = new ResizeObserver(entries => {
-      const containerW = entries[0].contentRect.width
-      const w = Math.max(containerW, MIN_W)
-      setDims({ w, h: Math.round(w * ASPECT) })
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  const { w, h } = dims
-  const scrollable = w === MIN_W
-
   return (
     <div className="diagram-wrap">
-      <div className="diagram-scroll-outer" ref={outerRef}>
-        <div className="diagram-inner" style={{ width: w, height: h }}>
+      <div className="diagram-scroll-outer">
+        <div
+          className="diagram-inner"
+          style={{
+            position: 'relative',
+            width: '100%',
+            minWidth: 1100,
+            paddingBottom: `${ASPECT_PCT}%`,
+            height: 0,
+          }}
+        >
           <img
             src="/boat-plan.png"
             alt="Catalina 445 floor plan"
-            className="boat-img"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              userSelect: 'none',
+            }}
             draggable={false}
           />
 
           {COMPARTMENTS.map(c => {
             const pos = POSITIONS[c.num]
             if (!pos) return null
-            const left = (pos.px / 100) * w
-            const top  = (pos.py / 100) * h
             const isSelected = selected === c.id
             const count = itemCount(inventory, c.id)
             const hasItems = count > 0
-
             return (
               <button
                 key={c.id}
                 className={`circle-btn ${isSelected ? 'circle-btn--active' : ''} ${hasItems ? 'circle-btn--stocked' : ''}`}
-                style={{ left, top }}
+                style={{ left: `${pos.px}%`, top: `${pos.py}%` }}
                 onClick={() => onSelect(c.id)}
                 aria-label={`Compartment ${c.num}: ${c.name}`}
               >
@@ -107,7 +84,7 @@ export default function BoatDiagram({ inventory, onSelect, selected }) {
         </div>
       </div>
 
-      {scrollable && <p className="scroll-hint">← scroll to see full boat →</p>}
+      <p className="scroll-hint">← scroll horizontally on small screens →</p>
 
       <div className="comp-list">
         {COMPARTMENTS.map(c => {

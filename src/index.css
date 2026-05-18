@@ -1909,19 +1909,9 @@ html, body, #root {
     height: 180px;
   }
 
-  /* Boat diagram — let it use full container width */
+  /* Boat diagram — let it scroll naturally (same as locker diagram) */
   .diagram-scroll-outer {
-    overflow-x: hidden;
-  }
-
-  .diagram-inner {
-    width: 100% !important;
-  }
-
-  .boat-img {
-    width: 100%;
-    height: 100%;
-    object-fit: fill;
+    overflow-x: auto;
   }
 }
 
