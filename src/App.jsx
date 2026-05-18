@@ -23,10 +23,10 @@ const STATUS_LABEL = {
   unconfigured:  '',
 }
 
-// ── Provision categories manager (used inside Settings panel) ──
-function ProvCategoryManager({ customCategories, onAdd, onDelete, onRename }) {
-  const [newCat,    setNewCat]    = useState('')
-  const [renaming,  setRenaming]  = useState(null)   // { name, draft }
+// ── Provision category manager ─────────────────────────────
+function ProvCategoryManager({ categories, onAdd, onDelete, onRename, onMove }) {
+  const [newCat,   setNewCat]   = useState('')
+  const [renaming, setRenaming] = useState(null)  // { index, draft }
 
   const handleAdd = () => {
     if (!newCat.trim()) return
@@ -34,42 +34,64 @@ function ProvCategoryManager({ customCategories, onAdd, onDelete, onRename }) {
     setNewCat('')
   }
 
-  const commitRename = () => {
-    if (renaming && renaming.draft.trim()) onRename(renaming.name, renaming.draft.trim())
+  const commitRename = (index) => {
+    if (renaming?.draft.trim()) onRename(categories[index], renaming.draft.trim())
     setRenaming(null)
   }
 
   return (
     <div className="prov-cat-manager">
       <p className="prefs-label">Provision Categories</p>
+      <p className="prov-cat-hint">Drag order with ↑↓ buttons. Items in a deleted category move to the first remaining one.</p>
 
-      {customCategories.length === 0 && (
-        <p className="prov-cat-empty">No custom categories yet.</p>
-      )}
+      <div className="prov-cat-list">
+        {categories.map((cat, i) => (
+          <div key={cat} className="prov-cat-row">
+            <div className="prov-cat-arrows">
+              <button
+                className="prov-cat-arrow"
+                onClick={() => onMove(i, -1)}
+                disabled={i === 0}
+                aria-label="Move up"
+              >▲</button>
+              <button
+                className="prov-cat-arrow"
+                onClick={() => onMove(i, 1)}
+                disabled={i === categories.length - 1}
+                aria-label="Move down"
+              >▼</button>
+            </div>
 
-      {customCategories.map(cat => (
-        <div key={cat} className="prov-cat-row">
-          {renaming?.name === cat ? (
-            <>
-              <input
-                className="add-input add-input--name prov-cat-rename-input"
-                value={renaming.draft}
-                onChange={e => setRenaming(r => ({ ...r, draft: e.target.value }))}
-                onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenaming(null) }}
-                autoFocus
-              />
-              <button className="prov-cat-action prov-cat-action--save" onClick={commitRename}>Save</button>
-              <button className="prov-cat-action" onClick={() => setRenaming(null)}>Cancel</button>
-            </>
-          ) : (
-            <>
-              <span className="prov-cat-name">{cat}</span>
-              <button className="prov-cat-action" onClick={() => setRenaming({ name: cat, draft: cat })}>Rename</button>
-              <button className="prov-cat-action prov-cat-action--del" onClick={() => onDelete(cat)}>✕</button>
-            </>
-          )}
-        </div>
-      ))}
+            {renaming?.index === i ? (
+              <>
+                <input
+                  className="add-input prov-cat-rename-input"
+                  value={renaming.draft}
+                  onChange={e => setRenaming(r => ({ ...r, draft: e.target.value }))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter')  commitRename(i)
+                    if (e.key === 'Escape') setRenaming(null)
+                  }}
+                  autoFocus
+                />
+                <button className="prov-cat-action prov-cat-action--save" onClick={() => commitRename(i)}>Save</button>
+                <button className="prov-cat-action" onClick={() => setRenaming(null)}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <span className="prov-cat-name">{cat}</span>
+                <button className="prov-cat-action" onClick={() => setRenaming({ index: i, draft: cat })}>Rename</button>
+                <button
+                  className="prov-cat-action prov-cat-action--del"
+                  onClick={() => onDelete(cat)}
+                  disabled={categories.length <= 1}
+                  aria-label={`Delete ${cat}`}
+                >✕</button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
 
       <div className="prov-cat-add-row">
         <input
@@ -86,10 +108,10 @@ function ProvCategoryManager({ customCategories, onAdd, onDelete, onRename }) {
 }
 
 export default function App() {
-  const [screen, setScreen]       = useState('inventory')
-  const [showSync, setShowSync]   = useState(false)
-  const [showPrefs, setShowPrefs] = useState(false)
-  const [joinInput, setJoinInput] = useState('')
+  const [screen, setScreen]           = useState('inventory')
+  const [showSync, setShowSync]       = useState(false)
+  const [showPrefs, setShowPrefs]     = useState(false)
+  const [joinInput, setJoinInput]     = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
 
   const { prefs, setPref } = usePrefs()
@@ -123,8 +145,9 @@ export default function App() {
   const {
     items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
     deleteItem: deleteProvItem, clearList: clearProvList, resetDefaults: resetProvDefaults,
-    allCategories: provAllCategories, customCategories: provCustomCats,
-    addCategory: addProvCat, deleteCategory: deleteProvCat, renameCategory: renameProvCat,
+    categories: provCategories,
+    addCategory: addProvCat, deleteCategory: deleteProvCat,
+    renameCategory: renameProvCat, moveCategory: moveProvCat,
     importProvisions,
   } = useProvisions()
 
@@ -138,13 +161,13 @@ export default function App() {
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
-    ditchSop: sop, ditchItems, lockerInventory, provItems, provCategories: provCustomCats, onRemoteData,
+    ditchSop: sop, ditchItems, lockerInventory,
+    provItems, provCategories, onRemoteData,
   })
 
-  // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCustomCats)
-  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCustomCats])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories])
 
   return (
     <div className="app">
@@ -179,10 +202,11 @@ export default function App() {
           </div>
 
           <ProvCategoryManager
-            customCategories={provCustomCats}
+            categories={provCategories}
             onAdd={addProvCat}
             onDelete={deleteProvCat}
             onRename={renameProvCat}
+            onMove={moveProvCat}
           />
 
           <button
@@ -270,7 +294,7 @@ export default function App() {
       {screen === 'provisions' && (
         <ProvisionsScreen
           items={provItems}
-          allCategories={provAllCategories}
+          categories={provCategories}
           toggleItem={toggleProvItem}
           addItem={addProvItem}
           deleteItem={deleteProvItem}

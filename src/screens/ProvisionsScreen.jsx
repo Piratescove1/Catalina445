@@ -46,15 +46,15 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   )
 }
 
-export default function ProvisionsScreen({ items, allCategories, toggleItem, addItem, deleteItem, clearList, resetDefaults }) {
+export default function ProvisionsScreen({ items, categories, toggleItem, addItem, deleteItem, clearList, resetDefaults }) {
   const [showListOnly, setShowListOnly] = useState(false)
   const [editMode,     setEditMode]     = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const checkedCount = items.filter(it => it.checked).length
 
-  const displayed  = showListOnly ? items.filter(it => it.checked) : items
-  const categories = allCategories.filter(cat => displayed.some(it => it.category === cat))
+  const displayed      = showListOnly ? items.filter(it => it.checked) : items
+  const visibleCats    = categories.filter(cat => displayed.some(it => it.category === cat))
 
   return (
     <div className="screen">
@@ -115,7 +115,7 @@ export default function ProvisionsScreen({ items, allCategories, toggleItem, add
           <p className="prov-empty">No items on the list yet. Tap "All items" and check what you need.</p>
         )}
 
-        {categories.map(cat => {
+        {visibleCats.map(cat => {
           const catItems = displayed.filter(it => it.category === cat)
           if (!catItems.length) return null
           return (
@@ -146,7 +146,7 @@ export default function ProvisionsScreen({ items, allCategories, toggleItem, add
           )
         })}
 
-        <AddItemRow allCategories={allCategories} onAdd={addItem} />
+        <AddItemRow allCategories={categories} onAdd={addItem} />
         <div style={{ height: 16 }} />
       </div>
     </div>

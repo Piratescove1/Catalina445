@@ -8,6 +8,11 @@ function defaultItems() {
   return COMMON_PROVISIONS.map(p => ({ ...p, checked: false }))
 }
 
+// Default category order: My Items first, then the built-in list
+function defaultCategories() {
+  return ['My Items', ...PROVISION_CATEGORIES]
+}
+
 function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
@@ -21,11 +26,8 @@ function save(key, data) {
 }
 
 export function useProvisions() {
-  const [items,            setItems]      = useState(() => load(ITEMS_KEY, defaultItems()))
-  const [customCategories, setCats]       = useState(() => load(CATS_KEY,  []))
-
-  // Full ordered list: built-ins first, then user-added
-  const allCategories = ['My Items', ...PROVISION_CATEGORIES, ...customCategories]
+  const [items,      setItems] = useState(() => load(ITEMS_KEY, defaultItems()))
+  const [categories, setCats]  = useState(() => load(CATS_KEY,  defaultCategories()))
 
   // ── Item operations ────────────────────────────────────
   const toggleItem = useCallback((id) => {
@@ -62,9 +64,10 @@ export function useProvisions() {
   }, [])
 
   const resetDefaults = useCallback(() => {
-    const next = defaultItems()
-    setItems(next)
-    save(ITEMS_KEY, next)
+    const nextItems = defaultItems()
+    const nextCats  = defaultCategories()
+    setItems(nextItems); save(ITEMS_KEY, nextItems)
+    setCats(nextCats);   save(CATS_KEY,  nextCats)
   }, [])
 
   // ── Category operations ────────────────────────────────
@@ -80,14 +83,16 @@ export function useProvisions() {
 
   const deleteCategory = useCallback((name) => {
     setCats(prev => {
+      if (prev.length <= 1) return prev       // always keep at least one
       const next = prev.filter(c => c !== name)
       save(CATS_KEY, next)
-      return next
-    })
-    // Reassign items that were in the deleted category to 'My Items'
-    setItems(prev => {
-      const next = prev.map(it => it.category === name ? { ...it, category: 'My Items' } : it)
-      save(ITEMS_KEY, next)
+      // Reassign orphaned items to the first remaining category
+      setItems(items => {
+        const fallback = next[0]
+        const ni = items.map(it => it.category === name ? { ...it, category: fallback } : it)
+        save(ITEMS_KEY, ni)
+        return ni
+      })
       return next
     })
   }, [])
@@ -106,6 +111,17 @@ export function useProvisions() {
     })
   }, [])
 
+  const moveCategory = useCallback((index, direction) => {
+    setCats(prev => {
+      const next = [...prev]
+      const target = index + direction
+      if (target < 0 || target >= next.length) return prev
+      ;[next[index], next[target]] = [next[target], next[index]]
+      save(CATS_KEY, next)
+      return next
+    })
+  }, [])
+
   // ── Sync import ────────────────────────────────────────
   const importProvisions = useCallback((remoteItems, remoteCats) => {
     if (remoteItems) { setItems(remoteItems); save(ITEMS_KEY, remoteItems) }
@@ -114,7 +130,7 @@ export function useProvisions() {
 
   return {
     items, toggleItem, addItem, deleteItem, clearList, resetDefaults,
-    allCategories, customCategories, addCategory, deleteCategory, renameCategory,
+    categories, addCategory, deleteCategory, renameCategory, moveCategory,
     importProvisions,
   }
 }
