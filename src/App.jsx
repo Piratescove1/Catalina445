@@ -23,6 +23,68 @@ const STATUS_LABEL = {
   unconfigured:  '',
 }
 
+// ── Provision categories manager (used inside Settings panel) ──
+function ProvCategoryManager({ customCategories, onAdd, onDelete, onRename }) {
+  const [newCat,    setNewCat]    = useState('')
+  const [renaming,  setRenaming]  = useState(null)   // { name, draft }
+
+  const handleAdd = () => {
+    if (!newCat.trim()) return
+    onAdd(newCat.trim())
+    setNewCat('')
+  }
+
+  const commitRename = () => {
+    if (renaming && renaming.draft.trim()) onRename(renaming.name, renaming.draft.trim())
+    setRenaming(null)
+  }
+
+  return (
+    <div className="prov-cat-manager">
+      <p className="prefs-label">Provision Categories</p>
+
+      {customCategories.length === 0 && (
+        <p className="prov-cat-empty">No custom categories yet.</p>
+      )}
+
+      {customCategories.map(cat => (
+        <div key={cat} className="prov-cat-row">
+          {renaming?.name === cat ? (
+            <>
+              <input
+                className="add-input add-input--name prov-cat-rename-input"
+                value={renaming.draft}
+                onChange={e => setRenaming(r => ({ ...r, draft: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenaming(null) }}
+                autoFocus
+              />
+              <button className="prov-cat-action prov-cat-action--save" onClick={commitRename}>Save</button>
+              <button className="prov-cat-action" onClick={() => setRenaming(null)}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <span className="prov-cat-name">{cat}</span>
+              <button className="prov-cat-action" onClick={() => setRenaming({ name: cat, draft: cat })}>Rename</button>
+              <button className="prov-cat-action prov-cat-action--del" onClick={() => onDelete(cat)}>✕</button>
+            </>
+          )}
+        </div>
+      ))}
+
+      <div className="prov-cat-add-row">
+        <input
+          className="add-input add-input--name"
+          placeholder="New category name…"
+          value={newCat}
+          onChange={e => setNewCat(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+        />
+        <button className="add-btn" onClick={handleAdd} disabled={!newCat.trim()}>Add</button>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [screen, setScreen]       = useState('inventory')
   const [showSync, setShowSync]   = useState(false)
@@ -61,26 +123,28 @@ export default function App() {
   const {
     items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
     deleteItem: deleteProvItem, clearList: clearProvList, resetDefaults: resetProvDefaults,
+    allCategories: provAllCategories, customCategories: provCustomCats,
+    addCategory: addProvCat, deleteCategory: deleteProvCat, renameCategory: renameProvCat,
     importProvisions,
   } = useProvisions()
 
-  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions) => {
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions, provCats) => {
     importData(inv, voy)
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
     importLockers(lockers)
-    importProvisions(provisions)
+    importProvisions(provisions, provCats)
   }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions])
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
-    ditchSop: sop, ditchItems, lockerInventory, provItems, onRemoteData,
+    ditchSop: sop, ditchItems, lockerInventory, provItems, provCategories: provCustomCats, onRemoteData,
   })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems)
-  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCustomCats)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCustomCats])
 
   return (
     <div className="app">
@@ -102,7 +166,7 @@ export default function App() {
 
       {/* Settings panel */}
       {showPrefs && (
-        <div className="sync-panel">
+        <div className="sync-panel sync-panel--scrollable">
           <p className="sync-panel-title">Settings</p>
           <div className="prefs-row">
             <label className="prefs-label">Boat Name</label>
@@ -113,6 +177,14 @@ export default function App() {
               placeholder="e.g. Catalina 445"
             />
           </div>
+
+          <ProvCategoryManager
+            customCategories={provCustomCats}
+            onAdd={addProvCat}
+            onDelete={deleteProvCat}
+            onRename={renameProvCat}
+          />
+
           <button
             className="export-btn"
             onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName })}
@@ -198,6 +270,7 @@ export default function App() {
       {screen === 'provisions' && (
         <ProvisionsScreen
           items={provItems}
+          allCategories={provAllCategories}
           toggleItem={toggleProvItem}
           addItem={addProvItem}
           deleteItem={deleteProvItem}

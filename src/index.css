@@ -151,6 +151,12 @@ html, body, #root {
   padding: 16px 20px;
 }
 
+.sync-panel--scrollable {
+  max-height: calc(100dvh - 34px - var(--nav-h));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .sync-panel-title {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1840,6 +1846,69 @@ html, body, #root {
   color: var(--cream-dim);
   opacity: 0.5;
   flex-shrink: 0;
+}
+
+/* ── Provision category manager (in Settings) ──────────── */
+.prov-cat-manager {
+  margin-bottom: 16px;
+  border-top: 1px solid var(--navy-light);
+  padding-top: 14px;
+}
+
+.prov-cat-empty {
+  font-size: 0.8rem;
+  color: var(--cream-dim);
+  font-style: italic;
+  margin: 6px 0 10px;
+}
+
+.prov-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.prov-cat-name {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--cream);
+}
+
+.prov-cat-rename-input {
+  flex: 1;
+  padding: 6px 10px !important;
+  min-height: 36px !important;
+  font-size: 0.85rem !important;
+}
+
+.prov-cat-action {
+  background: none;
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.prov-cat-action--save {
+  border-color: var(--brass-dim);
+  color: var(--brass);
+}
+
+.prov-cat-action--del {
+  color: #f87171;
+  border-color: transparent;
+}
+
+.prov-cat-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 /* ── Provisions screen ─────────────────────────────────── */

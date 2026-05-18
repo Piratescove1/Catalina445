@@ -1,11 +1,8 @@
 import { useState } from 'react'
-import { PROVISION_CATEGORIES } from '../data/provisions'
 
-const ALL_CATEGORIES = ['My Items', ...PROVISION_CATEGORIES]
-
-function AddItemRow({ onAdd, editMode }) {
-  const [name, setName]     = useState('')
-  const [cat,  setCat]      = useState('My Items')
+function AddItemRow({ allCategories, onAdd }) {
+  const [name, setName] = useState('')
+  const [cat,  setCat]  = useState(allCategories[0] ?? 'My Items')
 
   const handleAdd = () => {
     if (!name.trim()) return
@@ -22,15 +19,13 @@ function AddItemRow({ onAdd, editMode }) {
         onChange={e => setName(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && handleAdd()}
       />
-      {editMode && (
-        <select
-          className="prov-cat-select"
-          value={cat}
-          onChange={e => setCat(e.target.value)}
-        >
-          {ALL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      )}
+      <select
+        className="prov-cat-select"
+        value={cat}
+        onChange={e => setCat(e.target.value)}
+      >
+        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
       <button className="add-btn" onClick={handleAdd} disabled={!name.trim()}>Add</button>
     </div>
   )
@@ -51,22 +46,22 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   )
 }
 
-export default function ProvisionsScreen({ items, toggleItem, addItem, deleteItem, clearList, resetDefaults }) {
-  const [showListOnly,    setShowListOnly]    = useState(false)
-  const [editMode,        setEditMode]        = useState(false)
-  const [confirmReset,    setConfirmReset]    = useState(false)
+export default function ProvisionsScreen({ items, allCategories, toggleItem, addItem, deleteItem, clearList, resetDefaults }) {
+  const [showListOnly, setShowListOnly] = useState(false)
+  const [editMode,     setEditMode]     = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const checkedCount = items.filter(it => it.checked).length
 
-  const displayed = showListOnly ? items.filter(it => it.checked) : items
-  const categories = ALL_CATEGORIES.filter(cat => displayed.some(it => it.category === cat))
+  const displayed  = showListOnly ? items.filter(it => it.checked) : items
+  const categories = allCategories.filter(cat => displayed.some(it => it.category === cat))
 
   return (
     <div className="screen">
       {confirmReset && (
         <ConfirmDialog
           title="Restore Default List?"
-          body="This will remove all your custom items and restore all original items unchecked. Your shopping list will be cleared."
+          body="This will remove all custom items and restore all original items unchecked. Your shopping list will be cleared."
           confirmLabel="Yes, restore defaults"
           onConfirm={() => { setConfirmReset(false); resetDefaults() }}
           onCancel={() => setConfirmReset(false)}
@@ -151,7 +146,7 @@ export default function ProvisionsScreen({ items, toggleItem, addItem, deleteIte
           )
         })}
 
-        <AddItemRow onAdd={addItem} editMode={editMode} />
+        <AddItemRow allCategories={allCategories} onAdd={addItem} />
         <div style={{ height: 16 }} />
       </div>
     </div>
