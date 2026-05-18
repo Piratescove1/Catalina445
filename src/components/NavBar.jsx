@@ -2,6 +2,7 @@ const TABS = [
   { id: 'inventory',   icon: '⚓', label: "Ship's Stores", sub: 'Inventory' },
   { id: 'voyage',      icon: '🧭', label: 'Voyage Log',    sub: 'Log & GPS' },
   { id: 'maintenance', icon: '🔧', label: 'Maintenance',   sub: 'Service Log' },
+  { id: 'provisions',  icon: '🛒', label: 'Provisions',    sub: 'Shopping' },
   { id: 'ditchbag',   icon: '🆘', label: 'Ditch Bag',      sub: 'Abandon Ship', ditch: true },
 ]
 

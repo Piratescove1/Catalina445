@@ -103,7 +103,15 @@ function makeDitchBagSheet(sop, ditchItems) {
   return XLSX.utils.aoa_to_sheet(rows)
 }
 
-export function exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, boatName }) {
+function makeProvisionsSheet(provItems) {
+  const rows = [['Category', 'Item', 'On List']]
+  for (const it of provItems) {
+    rows.push([it.category, it.name, it.checked ? 'Yes' : ''])
+  }
+  return XLSX.utils.aoa_to_sheet(rows)
+}
+
+export function exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName }) {
   const wb = XLSX.utils.book_new()
 
   XLSX.utils.book_append_sheet(wb, makeCompartmentsSheet(inventory),           'Compartments')
@@ -112,6 +120,7 @@ export function exportToExcel({ inventory, lockerInventory, voyages, maintenance
   XLSX.utils.book_append_sheet(wb, makeMaintenanceSheet(maintenance),          'Maintenance Log')
   XLSX.utils.book_append_sheet(wb, makeFutureProjectsSheet(futureProjects),    'Future Projects')
   XLSX.utils.book_append_sheet(wb, makeDitchBagSheet(sop, ditchItems),         'Ditch Bag')
+  if (provItems?.length) XLSX.utils.book_append_sheet(wb, makeProvisionsSheet(provItems), 'Provisions')
 
   const date = new Date().toISOString().slice(0, 10)
   const name = (boatName || 'catalina445').replace(/\s+/g, '-')

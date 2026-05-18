@@ -4,12 +4,14 @@ import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
 import { useDitchBag } from './hooks/useDitchBag'
 import { useLockers } from './hooks/useLockers'
+import { useProvisions } from './hooks/useProvisions'
 import { usePrefs } from './hooks/usePrefs'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
 import DitchBagScreen from './screens/DitchBagScreen'
+import ProvisionsScreen from './screens/ProvisionsScreen'
 import NavBar from './components/NavBar'
 import './index.css'
 
@@ -56,22 +58,28 @@ export default function App() {
     togglePacked, importDitchBag,
   } = useDitchBag()
 
-  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers) => {
+  const {
+    items: provItems, toggleItem: toggleProvItem, addItem: addProvItem,
+    deleteItem: deleteProvItem, clearList: clearProvList, importProvisions,
+  } = useProvisions()
+
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions) => {
     importData(inv, voy)
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
     importLockers(lockers)
-  }, [importData, importMaintenance, importDitchBag, importLockers])
+    importProvisions(provisions)
+  }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions])
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
-    ditchSop: sop, ditchItems, lockerInventory, onRemoteData,
+    ditchSop: sop, ditchItems, lockerInventory, provItems, onRemoteData,
   })
 
   // Push to Firestore whenever local data changes
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory)
-  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems])
 
   return (
     <div className="app">
@@ -106,7 +114,7 @@ export default function App() {
           </div>
           <button
             className="export-btn"
-            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, boatName: prefs.boatName })}
+            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName })}
           >
             Download Excel Backup
           </button>
@@ -184,6 +192,15 @@ export default function App() {
           addPart={addPart}
           togglePart={togglePart}
           deletePart={deletePart}
+        />
+      )}
+      {screen === 'provisions' && (
+        <ProvisionsScreen
+          items={provItems}
+          toggleItem={toggleProvItem}
+          addItem={addProvItem}
+          deleteItem={deleteProvItem}
+          clearList={clearProvList}
         />
       )}
       {screen === 'ditchbag' && (
