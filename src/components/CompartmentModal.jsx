@@ -12,9 +12,9 @@ function ItemRow({ item, onSetQty, onDelete, onRename }) {
   }
 
   return (
-    <div className="item-row">
+    <div className="item-row item-row--with-rename">
       {editing ? (
-        <>
+        <div className="item-rename-row">
           <input
             className="add-input item-rename-input"
             value={draft}
@@ -24,19 +24,23 @@ function ItemRow({ item, onSetQty, onDelete, onRename }) {
           />
           <button className="item-rename-save" onClick={commit}>Save</button>
           <button className="item-rename-cancel" onClick={() => setEditing(false)}>✕</button>
-        </>
+        </div>
       ) : (
-        <>
-          <span className="item-name">{item.name}</span>
-          {item.unit && <span className="item-unit">{item.unit}</span>}
-          <div className="item-controls">
-            <button className="item-edit-btn" onClick={() => { setDraft(item.name); setEditing(true) }} aria-label="Rename">✏️</button>
-            <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty - 1)}>−</button>
-            <span className="item-qty">{item.qty}</span>
-            <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty + 1)}>+</button>
-            <button className="del-btn" onClick={() => onDelete(item.name)} aria-label="Delete">🗑</button>
+        <div className="item-main">
+          <div className="item-top">
+            <span className="item-name">{item.name}</span>
+            {item.unit && <span className="item-unit">{item.unit}</span>}
+            <div className="item-controls">
+              <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty - 1)}>−</button>
+              <span className="item-qty">{item.qty}</span>
+              <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty + 1)}>+</button>
+              <button className="del-btn" onClick={() => onDelete(item.name)} aria-label="Delete">🗑</button>
+            </div>
           </div>
-        </>
+          <button className="item-rename-trigger" onClick={() => { setDraft(item.name); setEditing(true) }}>
+            Rename
+          </button>
+        </div>
       )}
     </div>
   )
