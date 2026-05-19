@@ -2,50 +2,6 @@ import { useState, useCallback } from 'react'
 import { COMPARTMENTS } from '../data/compartments'
 import VoiceButton from './VoiceButton'
 
-function ItemRow({ item, onSetQty, onDelete, onRename }) {
-  const [editing, setEditing] = useState(false)
-  const [draft,   setDraft]   = useState(item.name)
-
-  const commit = () => {
-    if (draft.trim() && draft.trim() !== item.name) onRename(item.name, draft.trim())
-    setEditing(false)
-  }
-
-  return (
-    <div className="item-row item-row--with-rename">
-      {editing ? (
-        <div className="item-rename-row">
-          <input
-            className="add-input item-rename-input"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
-            autoFocus
-          />
-          <button className="item-rename-save" onClick={commit}>Save</button>
-          <button className="item-rename-cancel" onClick={() => setEditing(false)}>✕</button>
-        </div>
-      ) : (
-        <div className="item-main">
-          <div className="item-top">
-            <span className="item-name">{item.name}</span>
-            {item.unit && <span className="item-unit">{item.unit}</span>}
-            <div className="item-controls">
-              <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty - 1)}>−</button>
-              <span className="item-qty">{item.qty}</span>
-              <button className="qty-btn" onClick={() => onSetQty(item.name, item.qty + 1)}>+</button>
-              <button className="del-btn" onClick={() => onDelete(item.name)} aria-label="Delete">🗑</button>
-            </div>
-          </div>
-          <button className="item-rename-trigger" onClick={() => { setDraft(item.name); setEditing(true) }}>
-            Rename
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function CompartmentModal({
   compartmentId, inventory, onClose,
   onAddItem, onRemoveItem, onSetQty, onDeleteItem, onRenameItem, onFindItem,
@@ -56,18 +12,37 @@ export default function CompartmentModal({
   const items = inventory[compartmentId] || []
   const displayName = label || compartment.name
 
-  const [newName,     setNewName]     = useState('')
-  const [newQty,      setNewQty]      = useState('1')
-  const [newUnit,     setNewUnit]     = useState('')
-  const [feedback,    setFeedback]    = useState('')
-  const [editingTitle, setEditingTitle] = useState(false)
-  const [titleDraft,   setTitleDraft]  = useState(displayName)
+  const [editMode,     setEditMode]     = useState(false)
+  const [titleDraft,   setTitleDraft]   = useState(displayName)
+  const [itemDrafts,   setItemDrafts]   = useState({})
+  const [newName,      setNewName]      = useState('')
+  const [newQty,       setNewQty]       = useState('1')
+  const [newUnit,      setNewUnit]      = useState('')
+  const [feedback,     setFeedback]     = useState('')
 
   const flash = (msg) => { setFeedback(msg); setTimeout(() => setFeedback(''), 3000) }
 
-  const commitTitle = () => {
-    if (titleDraft.trim()) onSetLabel(compartmentId, titleDraft.trim())
-    setEditingTitle(false)
+  const enterEdit = () => {
+    setTitleDraft(displayName)
+    const drafts = {}
+    items.forEach(it => { drafts[it.name] = it.name })
+    setItemDrafts(drafts)
+    setEditMode(true)
+  }
+
+  const saveEdit = () => {
+    // Save compartment label if changed
+    if (titleDraft.trim() && titleDraft.trim() !== (label || compartment.name)) {
+      onSetLabel(compartmentId, titleDraft.trim())
+    }
+    // Save any renamed items
+    items.forEach(it => {
+      const draft = itemDrafts[it.name]
+      if (draft && draft.trim() && draft.trim() !== it.name) {
+        onRenameItem(compartmentId, it.name, draft.trim())
+      }
+    })
+    setEditMode(false)
   }
 
   const handleAdd = () => {
@@ -117,82 +92,100 @@ export default function CompartmentModal({
         }
         break
       }
-      default:
-        flash(`Command not applicable here: "${raw}"`)
+      default: flash(`Command not applicable here: "${raw}"`)
     }
   }, [compartmentId, items, onAddItem, onRemoveItem, onFindItem])
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
+
+        {/* Header */}
         <div className="modal-header">
           <span className="modal-icon">{compartment.icon}</span>
-          <div className="modal-title-wrap">
-            <span className="modal-num">#{compartment.num}</span>
-            {editingTitle ? (
-              <div className="modal-title-edit">
-                <input
-                  className="add-input modal-title-input"
-                  value={titleDraft}
-                  onChange={e => setTitleDraft(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') setEditingTitle(false) }}
-                  autoFocus
-                />
-                <button className="item-rename-save" onClick={commitTitle}>Save</button>
-                <button className="item-rename-cancel" onClick={() => setEditingTitle(false)}>✕</button>
-              </div>
-            ) : (
-              <button className="modal-title-btn" onClick={() => { setTitleDraft(displayName); setEditingTitle(true) }}>
-                {displayName} ✏️
-              </button>
-            )}
-          </div>
+          <h2 className="modal-title">#{compartment.num} — {displayName}</h2>
+          <button
+            className={`modal-edit-btn ${editMode ? 'modal-edit-btn--active' : ''}`}
+            onClick={editMode ? saveEdit : enterEdit}
+          >
+            {editMode ? 'Save' : 'Edit'}
+          </button>
           <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
+        {/* Edit-mode label field */}
+        {editMode && (
+          <div className="modal-label-row">
+            <label className="modal-label-hint">Compartment name</label>
+            <input
+              className="add-input modal-title-input"
+              value={titleDraft}
+              onChange={e => setTitleDraft(e.target.value)}
+              placeholder={compartment.name}
+            />
+          </div>
+        )}
+
         {feedback && <div className="modal-feedback">{feedback}</div>}
 
+        {/* Item list */}
         <div className="item-list">
           {items.length === 0 ? (
             <p className="item-empty">No items yet. Add one below or use the voice button.</p>
           ) : (
             items.map(item => (
-              <ItemRow
-                key={item.name}
-                item={item}
-                onSetQty={(name, qty) => onSetQty(compartmentId, name, qty)}
-                onDelete={(name) => onDeleteItem(compartmentId, name)}
-                onRename={(oldName, newName) => onRenameItem(compartmentId, oldName, newName)}
-              />
+              <div key={item.name} className="item-row">
+                {editMode ? (
+                  <input
+                    className="add-input item-rename-input"
+                    value={itemDrafts[item.name] ?? item.name}
+                    onChange={e => setItemDrafts(d => ({ ...d, [item.name]: e.target.value }))}
+                  />
+                ) : (
+                  <>
+                    <span className="item-name">{item.name}</span>
+                    {item.unit && <span className="item-unit">{item.unit}</span>}
+                  </>
+                )}
+                <div className="item-controls">
+                  <button className="qty-btn" onClick={() => onSetQty(compartmentId, item.name, item.qty - 1)}>−</button>
+                  <span className="item-qty">{item.qty}</span>
+                  <button className="qty-btn" onClick={() => onSetQty(compartmentId, item.name, item.qty + 1)}>+</button>
+                  <button className="del-btn" onClick={() => onDeleteItem(compartmentId, item.name)} aria-label="Delete">🗑</button>
+                </div>
+              </div>
             ))
           )}
         </div>
 
-        <div className="add-form">
-          <input
-            className="add-input add-input--name"
-            type="text"
-            placeholder="Item name"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          />
-          <input
-            className="add-input add-input--qty"
-            type="number" min="0" step="1" placeholder="Qty"
-            value={newQty}
-            onChange={e => setNewQty(e.target.value)}
-          />
-          <input
-            className="add-input add-input--unit"
-            type="text" placeholder="Unit"
-            value={newUnit}
-            onChange={e => setNewUnit(e.target.value)}
-          />
-          <button className="add-btn" onClick={handleAdd} disabled={!newName.trim()}>Add</button>
-        </div>
-
-        <VoiceButton onCommand={handleVoiceCommand} context="Try: "Add 3 cans of beans" · "Remove 1 flare"" />
+        {/* Add form — hidden in edit mode */}
+        {!editMode && (
+          <>
+            <div className="add-form">
+              <input
+                className="add-input add-input--name"
+                type="text" placeholder="Item name"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              />
+              <input
+                className="add-input add-input--qty"
+                type="number" min="0" step="1" placeholder="Qty"
+                value={newQty}
+                onChange={e => setNewQty(e.target.value)}
+              />
+              <input
+                className="add-input add-input--unit"
+                type="text" placeholder="Unit"
+                value={newUnit}
+                onChange={e => setNewUnit(e.target.value)}
+              />
+              <button className="add-btn" onClick={handleAdd} disabled={!newName.trim()}>Add</button>
+            </div>
+            <VoiceButton onCommand={handleVoiceCommand} context='Try: "Add 3 cans of beans" · "Remove 1 flare"' />
+          </>
+        )}
       </div>
     </div>
   )
