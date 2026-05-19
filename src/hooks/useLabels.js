@@ -31,7 +31,12 @@ export function useLabels() {
   const getLabel = useCallback((id, defaultName) => labels[id] || defaultName, [labels])
 
   const importLabels = useCallback((data) => {
-    if (data && typeof data === 'object') { setLabels(data); save(data) }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return
+    setLabels(prev => {
+      const next = { ...prev, ...data }
+      save(next)
+      return next
+    })
   }, [])
 
   return { labels, setLabel, getLabel, importLabels }
