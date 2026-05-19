@@ -103,6 +103,16 @@ export function useInventory() {
     })
   }, [updateInventory])
 
+  const renameItem = useCallback((compartmentId, oldName, newName) => {
+    if (!newName.trim()) return
+    updateInventory(prev => {
+      const items = (prev[compartmentId] || []).map(it =>
+        it.name.toLowerCase() === oldName.toLowerCase() ? { ...it, name: newName.trim() } : it
+      )
+      return { ...prev, [compartmentId]: items }
+    })
+  }, [updateInventory])
+
   const findItem = useCallback((name) => {
     // Search all compartments for an item by name, return [{ compartmentId, item }]
     const results = []
@@ -220,6 +230,7 @@ export function useInventory() {
     setItemQty,
     deleteItem,
     findItem,
+    renameItem,
     startVoyage,
     endVoyage,
     resumeVoyage,

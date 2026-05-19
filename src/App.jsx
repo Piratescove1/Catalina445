@@ -6,6 +6,7 @@ import { useDitchBag } from './hooks/useDitchBag'
 import { useLockers } from './hooks/useLockers'
 import { useProvisions } from './hooks/useProvisions'
 import { usePrefs } from './hooks/usePrefs'
+import { useLabels } from './hooks/useLabels'
 import { useSync, joinBoat } from './hooks/useSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
@@ -116,14 +117,16 @@ export default function App() {
 
   const { prefs, setPref } = usePrefs()
 
+  const { labels, setLabel, getLabel, importLabels } = useLabels()
+
   const {
     lockerInventory, addLockerItem, removeLockerItem,
-    setLockerItemQty, deleteLockerItem, importLockers,
+    setLockerItemQty, deleteLockerItem, renameLockerItem, importLockers,
   } = useLockers()
 
   const {
     inventory, voyages, activeVoyage,
-    addItem, removeItem, setItemQty, deleteItem, findItem,
+    addItem, removeItem, setItemQty, deleteItem, renameItem, findItem,
     startVoyage, endVoyage, resumeVoyage, renameVoyage,
     addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry,
     importData,
@@ -152,23 +155,24 @@ export default function App() {
     importProvisions,
   } = useProvisions()
 
-  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions, provCats) => {
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions, provCats, remoteLabels) => {
     importData(inv, voy)
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
     importLockers(lockers)
     importProvisions(provisions, provCats)
-  }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions])
+    importLabels(remoteLabels)
+  }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels])
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
     ditchSop: sop, ditchItems, lockerInventory,
-    provItems, provCategories, onRemoteData,
+    provItems, provCategories, labels, onRemoteData,
   })
 
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories)
-  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels)
+  }, [inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels])
 
   return (
     <div className="app">
@@ -255,12 +259,16 @@ export default function App() {
           removeItem={removeItem}
           setItemQty={setItemQty}
           deleteItem={deleteItem}
+          renameItem={renameItem}
           findItem={findItem}
           lockerInventory={lockerInventory}
           addLockerItem={addLockerItem}
           removeLockerItem={removeLockerItem}
           setLockerItemQty={setLockerItemQty}
           deleteLockerItem={deleteLockerItem}
+          renameLockerItem={renameLockerItem}
+          getLabel={getLabel}
+          setLabel={setLabel}
         />
       )}
       {screen === 'voyage' && (

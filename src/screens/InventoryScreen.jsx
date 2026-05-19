@@ -8,8 +8,9 @@ import VoiceButton from '../components/VoiceButton'
 
 export default function InventoryScreen({
   boatName,
-  inventory, addItem, removeItem, setItemQty, deleteItem, findItem,
-  lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem,
+  inventory, addItem, removeItem, setItemQty, deleteItem, renameItem, findItem,
+  lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem, renameLockerItem,
+  getLabel, setLabel,
 }) {
   const [tab, setTab]         = useState('compartments')  // 'compartments' | 'lockers'
   const [selected, setSelected] = useState(null)
@@ -132,7 +133,10 @@ export default function InventoryScreen({
           onRemoveItem={removeItem}
           onSetQty={setItemQty}
           onDeleteItem={deleteItem}
+          onRenameItem={renameItem}
           onFindItem={findItem}
+          label={getLabel(selected, null)}
+          onSetLabel={setLabel}
         />
       )}
 
@@ -142,9 +146,11 @@ export default function InventoryScreen({
           lockerInventory={lockerInventory}
           onClose={() => setSelected(null)}
           onAddItem={addLockerItem}
-          onRemoveItem={removeLockerItem}
           onSetQty={setLockerItemQty}
           onDeleteItem={deleteLockerItem}
+          onRenameItem={renameLockerItem}
+          label={getLabel(selected, null)}
+          onSetLabel={setLabel}
         />
       )}
     </div>

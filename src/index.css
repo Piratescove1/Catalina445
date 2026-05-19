@@ -862,6 +862,55 @@ html, body, #root {
   color: var(--cream);
 }
 
+/* Editable modal title */
+.modal-title-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.modal-num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brass-dim);
+  flex-shrink: 0;
+}
+
+.modal-title-btn {
+  background: none;
+  border: none;
+  font-size: 1.0rem;
+  font-weight: 700;
+  color: var(--cream);
+  cursor: pointer;
+  text-align: left;
+  padding: 2px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.modal-title-btn:hover { background: rgba(196,148,58,0.1); color: var(--brass) }
+
+.modal-title-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-title-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.92rem !important;
+  padding: 4px 8px !important;
+  min-height: 32px !important;
+}
+
 .modal-close {
   background: none;
   border: none;
@@ -942,6 +991,49 @@ html, body, #root {
   cursor: pointer;
   padding: 4px 6px;
   opacity: 0.6;
+}
+
+/* Item inline rename */
+.item-edit-btn {
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 5px;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+.item-edit-btn:hover { opacity: 1 }
+
+.item-rename-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem !important;
+  padding: 5px 8px !important;
+  min-height: 32px !important;
+}
+
+.item-rename-save {
+  background: rgba(196,148,58,0.15);
+  border: 1px solid var(--brass-dim);
+  border-radius: 6px;
+  color: var(--brass);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.item-rename-cancel {
+  background: none;
+  border: none;
+  color: var(--cream-dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
 }
 
 /* ── Add item form ─────────────────────────────────────── */

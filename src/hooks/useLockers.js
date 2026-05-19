@@ -69,9 +69,19 @@ export function useLockers() {
     })
   }, [update])
 
+  const renameLockerItem = useCallback((lockerId, oldName, newName) => {
+    if (!newName.trim()) return
+    update(prev => {
+      const items = (prev[lockerId] || []).map(it =>
+        it.name.toLowerCase() === oldName.toLowerCase() ? { ...it, name: newName.trim() } : it
+      )
+      return { ...prev, [lockerId]: items }
+    })
+  }, [update])
+
   const importLockers = useCallback((data) => {
     if (data) { setLockerInventory(data); save(data) }
   }, [])
 
-  return { lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem, importLockers }
+  return { lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem, renameLockerItem, importLockers }
 }
