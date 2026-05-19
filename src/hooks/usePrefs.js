@@ -29,5 +29,14 @@ export function usePrefs() {
     })
   }, [])
 
-  return { prefs, setPref }
+  const importPrefs = useCallback((data) => {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return
+    setPrefs(prev => {
+      const next = { ...DEFAULTS, ...prev, ...data }
+      save(next)
+      return next
+    })
+  }, [])
+
+  return { prefs, setPref, importPrefs }
 }

@@ -115,7 +115,7 @@ export default function App() {
   const [joinInput, setJoinInput]     = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const { prefs, setPref } = usePrefs()
+  const { prefs, setPref, importPrefs } = usePrefs()
 
   const { labels, setLabel, getLabel, importLabels } = useLabels()
 
@@ -155,24 +155,25 @@ export default function App() {
     importProvisions,
   } = useProvisions()
 
-  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions, provCats, remoteLabels) => {
+  const onRemoteData = useCallback((inv, voy, maint, future, ditchSop, ditchItemsRemote, lockers, provisions, provCats, remoteLabels, remotePrefs) => {
     importData(inv, voy)
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
     importLockers(lockers)
     importProvisions(provisions, provCats)
     importLabels(remoteLabels)
-  }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels])
+    importPrefs(remotePrefs)
+  }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels, importPrefs])
 
   const { status, boatId, push, pendingSync, resolveSync } = useSync({
     inventory, voyages, maintenance, futureProjects,
     ditchSop: sop, ditchItems, lockerInventory,
-    provItems, provCategories, labels, onRemoteData,
+    provItems, provCategories, labels, prefs, onRemoteData,
   })
 
   useEffect(() => {
-    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels)
-  }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels])
+    push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs)
+  }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
   return (
     <div className="app">
