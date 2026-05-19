@@ -113,6 +113,7 @@ export default function InventoryScreen({
             inventory={inventory}
             onSelect={setSelected}
             selected={selected}
+            getLabel={getLabel}
           />
         )}
         {tab === 'lockers' && (
@@ -120,6 +121,7 @@ export default function InventoryScreen({
             lockerInventory={lockerInventory}
             onSelect={setSelected}
             selected={selected}
+            getLabel={getLabel}
           />
         )}
       </div>

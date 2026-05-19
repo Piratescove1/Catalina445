@@ -32,7 +32,7 @@ function itemCount(inv, id) {
   return (inv[id] || []).reduce((s, i) => s + i.qty, 0)
 }
 
-export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
+export default function LockerDiagram({ lockerInventory, onSelect, selected, getLabel }) {
   return (
     <div className="diagram-wrap">
       <div className="diagram-scroll-outer">
@@ -78,7 +78,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
                 className={`circle-btn ${isSelected ? 'circle-btn--active' : ''} ${hasItems ? 'circle-btn--stocked' : ''}`}
                 style={{ left: `${pos.px}%`, top: `${pos.py}%` }}
                 onClick={() => onSelect(locker.id)}
-                aria-label={locker.name}
+                aria-label={getLabel ? getLabel(locker.id, locker.name) : locker.name}
               >
                 <span className="circle-num">{locker.num}</span>
                 {hasItems && <span className="circle-badge">{count > 99 ? '99+' : count}</span>}
@@ -107,7 +107,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected }) {
                   >
                     <span className="comp-num">{locker.num}</span>
                     <span className="comp-icon">{locker.icon}</span>
-                    <span className="comp-name">{locker.name}</span>
+                    <span className="comp-name">{getLabel ? getLabel(locker.id, locker.name) : locker.name}</span>
                     {count > 0
                       ? <span className="comp-count">{count} items</span>
                       : <span className="comp-empty">empty</span>

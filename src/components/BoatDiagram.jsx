@@ -31,7 +31,7 @@ function itemCount(inventory, id) {
   return (inventory[id] || []).reduce((s, i) => s + i.qty, 0)
 }
 
-export default function BoatDiagram({ inventory, onSelect, selected }) {
+export default function BoatDiagram({ inventory, onSelect, selected, getLabel }) {
   return (
     <div className="diagram-wrap">
       <div className="diagram-scroll-outer">
@@ -70,7 +70,7 @@ export default function BoatDiagram({ inventory, onSelect, selected }) {
                 className={`circle-btn ${isSelected ? 'circle-btn--active' : ''} ${hasItems ? 'circle-btn--stocked' : ''}`}
                 style={{ left: `${pos.px}%`, top: `${pos.py}%` }}
                 onClick={() => onSelect(c.id)}
-                aria-label={`Compartment ${c.num}: ${c.name}`}
+                aria-label={`Compartment ${c.num}: ${getLabel ? getLabel(c.id, c.name) : c.name}`}
               >
                 <span className="circle-num">{c.num}</span>
                 {hasItems && <span className="circle-badge">{count > 99 ? '99+' : count}</span>}
@@ -94,7 +94,7 @@ export default function BoatDiagram({ inventory, onSelect, selected }) {
             >
               <span className="comp-num">{c.num}</span>
               <span className="comp-icon">{c.icon}</span>
-              <span className="comp-name">{c.name}</span>
+              <span className="comp-name">{getLabel ? getLabel(c.id, c.name) : c.name}</span>
               {count > 0
                 ? <span className="comp-count">{count} items</span>
                 : <span className="comp-empty">empty</span>
