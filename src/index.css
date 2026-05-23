@@ -2154,13 +2154,83 @@ html, body, #root {
 
 /* Shopping list: item checked off at the store */
 .prov-item--got {
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .prov-item--got .prov-name {
   text-decoration: line-through;
   color: var(--cream-dim);
 }
+
+/* Store-in-inventory button on got items */
+.prov-store-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--brass-dim);
+  background: rgba(196,148,58,0.12);
+  color: var(--brass);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.prov-store-btn:hover { background: rgba(196,148,58,0.25); }
+
+/* Store-item dialog extras */
+.store-dialog { min-width: 300px; max-width: 420px; width: 90vw; }
+
+.store-dialog-item {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--cream);
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+}
+
+.store-dialog-qty-row,
+.store-dialog-dest-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.store-dialog-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--cream-dim);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.store-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.store-dialog-select {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--navy-light);
+  background: var(--navy-mid);
+  color: var(--cream);
+  font-size: 0.9rem;
+}
+
+.dialog-btn--primary {
+  background: var(--brass);
+  color: var(--navy);
+  border-color: var(--brass);
+  font-weight: 700;
+}
+.dialog-btn--primary:hover { background: #d4a44a; }
 
 .prov-item--edit-mode {
   gap: 8px;

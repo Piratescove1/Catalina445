@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { COMPARTMENTS } from '../data/compartments'
+import { LOCKERS } from '../data/lockers'
 
 function AddItemRow({ allCategories, onAdd }) {
   const [name, setName] = useState('')
@@ -84,11 +86,88 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
   )
 }
 
-export default function ProvisionsScreen({ items, categories, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults }) {
+function StoreItemDialog({ itemName, onStore, onCancel, getLabel }) {
+  const [qty,    setQty]    = useState(1)
+  const [destId, setDestId] = useState(COMPARTMENTS[0].id)
+
+  const handleStore = () => {
+    const isLocker = destId.startsWith('lock-')
+    onStore(destId, isLocker, Math.max(1, qty))
+  }
+
+  return (
+    <div className="dialog-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="dialog store-dialog">
+        <p className="dialog-title">📦 Store in Inventory</p>
+        <p className="store-dialog-item">{itemName}</p>
+
+        <div className="store-dialog-qty-row">
+          <label className="store-dialog-label">Quantity</label>
+          <div className="store-qty-controls">
+            <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
+            <span className="item-qty">{qty}</span>
+            <button className="qty-btn" onClick={() => setQty(q => q + 1)}>+</button>
+          </div>
+        </div>
+
+        <div className="store-dialog-dest-row">
+          <label className="store-dialog-label">Store in</label>
+          <select
+            className="store-dialog-select"
+            value={destId}
+            onChange={e => setDestId(e.target.value)}
+          >
+            <optgroup label="── Compartments ──">
+              {COMPARTMENTS.map(c => (
+                <option key={c.id} value={c.id}>
+                  #{c.num} — {getLabel ? getLabel(c.id, c.name) : c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="── Lockers & Drawers ──">
+              {LOCKERS.map(l => (
+                <option key={l.id} value={l.id}>
+                  #{l.num} — {getLabel ? getLabel(l.id, l.name) : l.name}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+        </div>
+
+        <div className="dialog-btns">
+          <button className="dialog-btn dialog-btn--primary" onClick={handleStore}>
+            Store here
+          </button>
+          <button className="dialog-btn" onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function ProvisionsScreen({ items, categories, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults, storeInCompartment, storeInLocker, getLabel }) {
   const [showListOnly,  setShowListOnly]  = useState(false)
   const [editMode,      setEditMode]      = useState(false)
   const [confirmReset,  setConfirmReset]  = useState(false)
   const [confirmClear,  setConfirmClear]  = useState(false)
+  const [storeItem,     setStoreItem]     = useState(null)   // { id, name } of item being stored
+  const [storeFeedback, setStoreFeedback] = useState('')
+
+  const flashStore = (msg) => { setStoreFeedback(msg); setTimeout(() => setStoreFeedback(''), 3000) }
+
+  const handleStore = (destId, isLocker, qty) => {
+    const name = storeItem.name
+    if (isLocker) storeInLocker(destId, name, qty)
+    else          storeInCompartment(destId, name, qty)
+    const dest = isLocker
+      ? LOCKERS.find(l => l.id === destId)
+      : COMPARTMENTS.find(c => c.id === destId)
+    const destLabel = dest
+      ? (isLocker ? `Locker #${dest.num}` : `Compartment #${dest.num}`)
+      : destId
+    flashStore(`✓ Stored ${qty} × ${name} in ${destLabel}`)
+    setStoreItem(null)
+  }
 
   const checkedCount = items.filter(it => it.checked).length
 
@@ -103,6 +182,15 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
 
   return (
     <div className="screen">
+      {storeItem && (
+        <StoreItemDialog
+          itemName={storeItem.name}
+          getLabel={getLabel}
+          onStore={handleStore}
+          onCancel={() => setStoreItem(null)}
+        />
+      )}
+
       {confirmClear && (
         <ConfirmDialog
           title="Clear Shopping List?"
@@ -146,6 +234,8 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
           </button>
         </div>
       </header>
+
+      {storeFeedback && <div className="global-feedback">{storeFeedback}</div>}
 
       {editMode ? (
         <div className="prov-edit-bar">
@@ -204,6 +294,13 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
                       {item.got ? '✓' : ''}
                     </button>
                     <span className="prov-name">{item.name}</span>
+                    {item.got && (
+                      <button
+                        className="prov-store-btn"
+                        onClick={() => setStoreItem({ id: item.id, name: item.name })}
+                        aria-label={`Store ${item.name} in inventory`}
+                      >📦 Store</button>
+                    )}
                   </div>
                 ) : (
                   // All items view: checkbox = "add to shopping list"

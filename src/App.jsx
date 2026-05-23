@@ -313,6 +313,9 @@ export default function App() {
           moveItem={moveProvItem}
           clearList={clearProvList}
           resetDefaults={resetProvDefaults}
+          storeInCompartment={addItem}
+          storeInLocker={addLockerItem}
+          getLabel={getLabel}
         />
       )}
       {screen === 'ditchbag' && (
