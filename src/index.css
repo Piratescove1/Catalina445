@@ -1339,13 +1339,50 @@ html, body, #root {
   margin: 12px 0;
 }
 
+/* Collapsed state — tap to open */
+.log-form-collapsed {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 16px;
+  background: var(--navy);
+  border: 2px dashed var(--brass-dim);
+  border-radius: 10px;
+  color: var(--brass);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  text-align: center;
+}
+.log-form-collapsed:hover { border-color: var(--brass); background: rgba(196,148,58,0.06); }
+
+/* Expanded form header row */
+.log-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.log-form-cancel {
+  background: none;
+  border: none;
+  color: var(--cream-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+.log-form-cancel:hover { color: var(--cream); }
+
 .log-form-title {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--cream-dim);
   text-transform: uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .log-form-grid {

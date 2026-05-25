@@ -36,6 +36,7 @@ function dayKey(iso) {
 const EMPTY_ENTRY = { lat: '', lon: '', cog: '', sog: '', awa: '', aws: '', text: '' }
 
 function LogEntryForm({ voyageId, onAdd }) {
+  const [open, setOpen] = useState(false)
   const [entry, setEntry] = useState(EMPTY_ENTRY)
   const [gpsLoading, setGpsLoading] = useState(false)
   const set = (k, v) => setEntry(prev => ({ ...prev, [k]: v }))
@@ -47,7 +48,6 @@ function LogEntryForm({ voyageId, onAdd }) {
     navigator.geolocation.getCurrentPosition(
       pos => {
         const { latitude, longitude } = pos.coords
-        // Format as degrees decimal minutes (nautical standard)
         const latDeg = Math.floor(Math.abs(latitude))
         const latMin = ((Math.abs(latitude) - latDeg) * 60).toFixed(3)
         const latDir = latitude >= 0 ? 'N' : 'S'
@@ -67,11 +67,29 @@ function LogEntryForm({ voyageId, onAdd }) {
     if (!hasData) return
     onAdd(voyageId, entry)
     setEntry(EMPTY_ENTRY)
+    setOpen(false)
+  }
+
+  const handleCancel = () => {
+    setEntry(EMPTY_ENTRY)
+    setOpen(false)
+  }
+
+  if (!open) {
+    return (
+      <button className="log-form-collapsed" onClick={() => setOpen(true)}>
+        ＋ New Log Entry
+      </button>
+    )
   }
 
   return (
     <div className="log-form">
-      <p className="log-form-title">New Log Entry</p>
+      <div className="log-form-header">
+        <p className="log-form-title">New Log Entry</p>
+        <button className="log-form-cancel" onClick={handleCancel}>✕</button>
+      </div>
+
       <div className="log-gps-row">
         <label className="log-field log-field--grow">
           <span>Lat</span>
@@ -85,6 +103,7 @@ function LogEntryForm({ voyageId, onAdd }) {
           {gpsLoading ? '…' : '📍'}
         </button>
       </div>
+
       <div className="log-form-grid">
         <label className="log-field">
           <span>COG °</span>
@@ -103,9 +122,7 @@ function LogEntryForm({ voyageId, onAdd }) {
           <input type="number" min="0" step="0.1" value={entry.aws} onChange={e => set('aws', e.target.value)} />
         </label>
       </div>
-      <button className="add-entry-btn" onClick={handleSubmit} disabled={!hasData}>
-        + Add Entry
-      </button>
+
       <label className="log-field" style={{ marginTop: 10 }}>
         <span>Notes</span>
         <textarea
@@ -116,6 +133,10 @@ function LogEntryForm({ voyageId, onAdd }) {
           onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
         />
       </label>
+
+      <button className="add-entry-btn" onClick={handleSubmit} disabled={!hasData}>
+        Save Log Entry
+      </button>
     </div>
   )
 }
