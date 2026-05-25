@@ -217,12 +217,13 @@ function LogList({ notes, voyageId, onEdit, onDelete }) {
   )
 }
 
-export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVoyage, resumeVoyage, renameVoyage, addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry }) {
+export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVoyage, resumeVoyage, renameVoyage, addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry, deleteVoyage }) {
   const [name, setName] = useState('')
   const [feedback, setFeedback] = useState('')
   const [openId, setOpenId] = useState(null)
   const [editingVoyageId, setEditingVoyageId] = useState(null)
   const [editNameVal, setEditNameVal] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const startEdit = (voyage) => { setEditingVoyageId(voyage.id); setEditNameVal(voyage.name || voyage.destination || '') }
   const saveEdit = (id) => { renameVoyage(id, editNameVal.trim()); setEditingVoyageId(null) }
@@ -258,8 +259,27 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
 
   const pastVoyages = voyages.filter(v => v.status === 'completed')
 
+  const confirmDeleteVoyage = confirmDeleteId
+    ? voyages.find(v => v.id === confirmDeleteId)
+    : null
+
   return (
     <div className="screen">
+      {confirmDeleteVoyage && (
+        <ConfirmDialog
+          title="Delete Voyage?"
+          body={`Permanently delete "${confirmDeleteVoyage.name || confirmDeleteVoyage.destination || 'Unnamed Voyage'}" and all its log entries? This cannot be undone.`}
+          confirmLabel="Yes, delete voyage"
+          onConfirm={() => {
+            deleteVoyage(confirmDeleteId)
+            setConfirmDeleteId(null)
+            setOpenId(null)
+            flash('Voyage deleted')
+          }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
       <header className="screen-header">
         <div>
           <h1 className="screen-title">Voyage Log</h1>
@@ -356,6 +376,7 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
                       </button>
                       <button className="name-edit-btn" onClick={() => startEdit(v)}>Edit Name</button>
                       <button className="pdf-btn" onClick={() => exportVoyagePDF(v)}>Export PDF</button>
+                      <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDeleteId(v.id)}>Delete</button>
                     </div>
                     {editingVoyageId === v.id && (
                       <div className="voyage-name-edit" style={{ marginBottom: 12 }}>

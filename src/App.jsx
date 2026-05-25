@@ -128,7 +128,7 @@ export default function App() {
     inventory, voyages, activeVoyage,
     addItem, removeItem, setItemQty, deleteItem, renameItem, findItem,
     startVoyage, endVoyage, resumeVoyage, renameVoyage,
-    addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry,
+    addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry, deleteVoyage,
     importData,
   } = useInventory()
 
@@ -284,6 +284,7 @@ export default function App() {
           addLogEntry={addLogEntry}
           updateLogEntry={updateLogEntry}
           deleteLogEntry={deleteLogEntry}
+          deleteVoyage={deleteVoyage}
         />
       )}
       {screen === 'maintenance' && (
