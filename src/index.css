@@ -1145,7 +1145,6 @@ html, body, #root {
   background: var(--navy-mid);
   border: 1.5px solid var(--brass);
   border-radius: var(--radius);
-  overflow: hidden;
 }
 
 .voyage-active-header {
