@@ -1,31 +1,31 @@
 import { LOCKERS, LOCKER_AREAS } from '../data/lockers'
 
-// Positions as % of image (2334 × 813), bow=right, stern=left, stbd=top, port=bottom
-// Cropped from SVTwoHappyDrawers and Lockers.pdf removing 75% of whitespace margins
+// Positions as % of image (2700 × 1111), bow=right, stern=left, stbd=top, port=bottom
+// Re-rendered from SVTwoHappyDrawers and Lockers.pdf; positions from PDF text layer
 const POSITIONS = {
-  'lock-1':  { px: 73.4, py: 45.9 },
-  'lock-2':  { px: 73.4, py: 57.0 },
-  'lock-3':  { px: 70.8, py: 36.8 },
-  'lock-4':  { px: 70.8, py: 68.5 },
-  'lock-5':  { px: 68.4, py: 73.7 },
-  'lock-6':  { px: 66.2, py: 73.4 },
-  'lock-7':  { px: 63.3, py: 65.3 },
-  'lock-8':  { px: 63.2, py: 79.4 },
-  'lock-9':  { px: 62.0, py: 48.5 },
-  'lock-10': { px: 59.3, py: 72.8 },
-  'lock-11': { px: 59.1, py: 84.9 },
-  'lock-12': { px: 50.2, py: 73.4 },
-  'lock-13': { px: 47.4, py: 14.6 },
-  'lock-14': { px: 45.6, py: 84.8 },
-  'lock-15': { px: 45.5, py: 74.2 },
-  'lock-16': { px: 43.1, py: 15.9 },
-  'lock-17': { px: 43.0, py: 33.3 },
-  'lock-18': { px: 33.5, py: 84.9 },
-  'lock-19': { px: 30.0, py: 22.1 },
-  'lock-20': { px: 29.1, py: 83.2 },
-  'lock-21': { px: 26.4, py: 22.1 },
-  'lock-22': { px: 25.6, py: 84.0 },
-  'lock-23': { px: 23.0, py: 53.6 },
+  'lock-1':  { px: 69.9, py: 46.5 },
+  'lock-2':  { px: 69.9, py: 55.1 },
+  'lock-3':  { px: 67.6, py: 39.8 },
+  'lock-4':  { px: 67.6, py: 63.8 },
+  'lock-5':  { px: 65.6, py: 67.7 },
+  'lock-6':  { px: 63.7, py: 67.4 },
+  'lock-7':  { px: 60.2, py: 48.6 },
+  'lock-8':  { px: 61.2, py: 60.7 },
+  'lock-9':  { px: 61.2, py: 67.7 },
+  'lock-10': { px: 61.1, py: 74.4 },
+  'lock-11': { px: 57.9, py: 66.8 },
+  'lock-12': { px: 57.8, py: 76.2 },
+  'lock-13': { px: 47.8, py: 23.0 },
+  'lock-14': { px: 50.1, py: 67.3 },
+  'lock-15': { px: 44.1, py: 24.1 },
+  'lock-16': { px: 44.1, py: 37.1 },
+  'lock-17': { px: 46.2, py: 68.0 },
+  'lock-18': { px: 46.4, py: 75.9 },
+  'lock-19': { px: 36.0, py: 76.1 },
+  'lock-20': { px: 33.0, py: 28.7 },
+  'lock-21': { px: 32.2, py: 74.8 },
+  'lock-22': { px: 30.0, py: 28.7 },
+  'lock-23': { px: 29.3, py: 75.4 },
 }
 
 function itemCount(inv, id) {
@@ -49,7 +49,7 @@ export default function LockerDiagram({ lockerInventory, onSelect, selected, get
             position: 'relative',
             width: '100%',
             minWidth: 1000,
-            aspectRatio: '2334 / 813',
+            aspectRatio: '2700 / 1111',
           }}
         >
           <img
