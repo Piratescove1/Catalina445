@@ -72,18 +72,6 @@ function LogEntryForm({ voyageId, onAdd }) {
   return (
     <div className="log-form">
       <p className="log-form-title">New Log Entry</p>
-
-      <label className="log-field" style={{ marginBottom: 10 }}>
-        <span>Notes</span>
-        <textarea
-          className="log-textarea"
-          placeholder="Conditions, observations, events…"
-          value={entry.text}
-          onChange={e => set('text', e.target.value)}
-          onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
-        />
-      </label>
-
       <div className="log-gps-row">
         <label className="log-field log-field--grow">
           <span>Lat</span>
@@ -97,7 +85,6 @@ function LogEntryForm({ voyageId, onAdd }) {
           {gpsLoading ? '…' : '📍'}
         </button>
       </div>
-
       <div className="log-form-grid">
         <label className="log-field">
           <span>COG °</span>
@@ -116,10 +103,19 @@ function LogEntryForm({ voyageId, onAdd }) {
           <input type="number" min="0" step="0.1" value={entry.aws} onChange={e => set('aws', e.target.value)} />
         </label>
       </div>
-
       <button className="add-entry-btn" onClick={handleSubmit} disabled={!hasData}>
-        Save Log Entry
+        + Add Entry
       </button>
+      <label className="log-field" style={{ marginTop: 10 }}>
+        <span>Notes</span>
+        <textarea
+          className="log-textarea"
+          placeholder="Conditions, observations, events…"
+          value={entry.text}
+          onChange={e => set('text', e.target.value)}
+          onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
+        />
+      </label>
     </div>
   )
 }
@@ -314,17 +310,9 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
               </div>
             </div>
 
-            <div className="log-section-header">
-              <span>Log Entries</span>
-              <span className="log-entry-count">{activeVoyage.notes?.length ?? 0} entries</span>
-            </div>
-
-            {(!activeVoyage.notes || activeVoyage.notes.length === 0)
-              ? <p className="item-empty" style={{ padding: '12px 16px' }}>No entries yet — add one below.</p>
-              : <LogList notes={activeVoyage.notes} voyageId={activeVoyage.id} onEdit={updateLogEntry} onDelete={deleteLogEntry} />
-            }
-
             <LogEntryForm voyageId={activeVoyage.id} onAdd={addLogEntry} />
+
+            <LogList notes={activeVoyage.notes} voyageId={activeVoyage.id} onEdit={updateLogEntry} onDelete={deleteLogEntry} />
           </div>
         ) : (
           <div className="voyage-start">
@@ -381,12 +369,8 @@ export default function VoyageScreen({ voyages, activeVoyage, startVoyage, endVo
                         <button className="name-save-btn" onClick={() => saveEdit(v.id)}>Save</button>
                       </div>
                     )}
-                    <div className="log-section-header">
-                      <span>Log Entries</span>
-                      <span className="log-entry-count">{v.notes?.length ?? 0} entries</span>
-                    </div>
                     {v.notes.length === 0
-                      ? <p className="item-empty" style={{ padding: '12px 16px' }}>No log entries</p>
+                      ? <p className="item-empty">No log entries</p>
                       : <LogList notes={v.notes} voyageId={v.id} onEdit={updateLogEntry} onDelete={deleteLogEntry} />
                     }
                   </div>

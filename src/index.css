@@ -1841,9 +1841,9 @@ html, body, #root {
 /* ── Add Entry button ──────────────────────────────────── */
 .add-entry-btn {
   width: 100%;
-  margin-top: 14px;
-  padding: 16px;
-  font-size: 1.05rem;
+  margin-top: 12px;
+  padding: 14px;
+  font-size: 1rem;
   font-weight: 700;
   background: var(--brass);
   color: var(--navy);
@@ -1852,34 +1852,11 @@ html, body, #root {
   cursor: pointer;
   letter-spacing: 0.03em;
 }
-.add-entry-btn:hover:not(:disabled) { background: #d4a44a; }
 
 .add-entry-btn:disabled {
   background: var(--navy-light);
   color: var(--cream-dim);
   cursor: default;
-}
-
-/* Log entries section header */
-.log-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--brass);
-  border-top: 1px solid rgba(255,255,255,0.07);
-  margin-top: 8px;
-}
-.log-entry-count {
-  font-size: 0.75rem;
-  color: var(--cream-dim);
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 /* ── Compartment numbered list ─────────────────────────── */
