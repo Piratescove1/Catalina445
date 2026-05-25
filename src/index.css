@@ -2455,11 +2455,10 @@ html, body, #root {
     grid-column: 1 / -1;
   }
 
-  .log-form {
+  .log-form,
+  .log-form-collapsed {
     grid-column: 1;
     grid-row: 2;
-    position: sticky;
-    top: 0;
   }
 
   .voyage-notes {
