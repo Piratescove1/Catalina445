@@ -158,8 +158,22 @@ function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCanc
 
 function LogEntryRow({ entry, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(entry.text || '')
+  const [draft, setDraft] = useState({})
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const set = (k, v) => setDraft(prev => ({ ...prev, [k]: v }))
+
+  const startEdit = () => {
+    setDraft({
+      lat: entry.lat || '', lon: entry.lon || '',
+      cog: entry.cog || '', sog: entry.sog || '',
+      awa: entry.awa || '', aws: entry.aws || '',
+      text: entry.text || '',
+    })
+    setEditing(true)
+  }
+
+  const save = () => { onEdit?.(draft); setEditing(false) }
 
   const navParts = [
     entry.lat && entry.lon && `${entry.lat} ${entry.lon}`,
@@ -169,38 +183,68 @@ function LogEntryRow({ entry, onEdit, onDelete }) {
     entry.aws && `AWS ${entry.aws}kts`,
   ].filter(Boolean)
 
-  const save = () => { onEdit?.({ text: draft }); setEditing(false) }
-
   return (
     <div className="log-entry">
       <div className="log-entry-header">
         <span className="note-time">{formatTimeOnly(entry.time)}</span>
         <div style={{ display: 'flex', gap: 6 }}>
           {onEdit && !editing && (
-            <button className="name-edit-btn" onClick={() => { setDraft(entry.text || ''); setEditing(true) }}>Edit</button>
+            <button className="name-edit-btn" onClick={startEdit}>Edit</button>
           )}
           {onDelete && !editing && (
             <button className="maint-action-btn maint-action-btn--danger" onClick={() => setConfirmDelete(true)}>Delete</button>
           )}
         </div>
       </div>
-      {navParts.length > 0 && <p className="log-entry-nav">{navParts.join(' · ')}</p>}
-      {editing ? (
+
+      {!editing && navParts.length > 0 && <p className="log-entry-nav">{navParts.join(' · ')}</p>}
+      {!editing && entry.text && <p className="log-entry-text">{entry.text}</p>}
+
+      {editing && (
         <div className="log-entry-edit">
-          <textarea
-            className="log-textarea log-textarea--compact"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            autoFocus
-          />
+          <div className="log-gps-row">
+            <label className="log-field log-field--grow">
+              <span>Lat</span>
+              <input value={draft.lat} onChange={e => set('lat', e.target.value)} placeholder="33°45.200'N" />
+            </label>
+            <label className="log-field log-field--grow">
+              <span>Lon</span>
+              <input value={draft.lon} onChange={e => set('lon', e.target.value)} placeholder="118°12.400'W" />
+            </label>
+          </div>
+          <div className="log-form-grid">
+            <label className="log-field">
+              <span>COG °</span>
+              <input type="number" min="0" max="359" value={draft.cog} onChange={e => set('cog', e.target.value)} />
+            </label>
+            <label className="log-field">
+              <span>SOG kts</span>
+              <input type="number" min="0" step="0.1" value={draft.sog} onChange={e => set('sog', e.target.value)} />
+            </label>
+            <label className="log-field">
+              <span>AWA °</span>
+              <input type="number" min="-180" max="180" value={draft.awa} onChange={e => set('awa', e.target.value)} />
+            </label>
+            <label className="log-field">
+              <span>AWS kts</span>
+              <input type="number" min="0" step="0.1" value={draft.aws} onChange={e => set('aws', e.target.value)} />
+            </label>
+          </div>
+          <label className="log-field" style={{ marginTop: 8 }}>
+            <span>Notes</span>
+            <textarea
+              className="log-textarea log-textarea--compact"
+              value={draft.text}
+              onChange={e => set('text', e.target.value)}
+            />
+          </label>
           <div className="log-entry-edit-actions">
             <button className="name-save-btn" onClick={save}>Save</button>
             <button className="pdf-btn" onClick={() => setEditing(false)}>Cancel</button>
           </div>
         </div>
-      ) : (
-        entry.text && <p className="log-entry-text">{entry.text}</p>
       )}
+
       {confirmDelete && (
         <ConfirmDialog
           title="Delete Log Entry?"
