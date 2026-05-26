@@ -1,4 +1,4 @@
-// Catalina 445 — 23 numbered compartments
+// Catalina 445 — 25 numbered compartments
 // cx/cy = circle center in SVG viewBox "0 0 920 360"
 // Stern=left, Bow=right, Starboard=top, Port=bottom
 
@@ -26,4 +26,6 @@ export const COMPARTMENTS = [
   { num: 21, id: 'comp-21', name: 'Guest Cabin',                   cx: 215, cy: 225, icon: '🛏️' },
   { num: 22, id: 'comp-22', name: 'Stern Starboard Locker',        cx: 90,  cy: 160, icon: '🔧' },
   { num: 23, id: 'comp-23', name: 'Stern Port Locker',             cx: 90,  cy: 205, icon: '🔧' },
+  { num: 24, id: 'comp-24', name: 'Aft Starboard Quarter',         cx: 55,  cy: 160, icon: '📦' },
+  { num: 25, id: 'comp-25', name: 'Aft Port Quarter',              cx: 55,  cy: 205, icon: '📦' },
 ]
