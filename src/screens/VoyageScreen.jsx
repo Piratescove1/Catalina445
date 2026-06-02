@@ -33,14 +33,44 @@ function dayKey(iso) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 }
 
+const pad2 = n => String(n).padStart(2, '0')
+
+// Current local date/time as the value strings that <input type="date"> and
+// <input type="time"> expect (YYYY-MM-DD and HH:MM).
+function nowDateValue() {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
+
+function nowTimeValue() {
+  const d = new Date()
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
 const EMPTY_ENTRY = { lat: '', lon: '', cog: '', sog: '', awa: '', aws: '', text: '' }
 
 function LogEntryForm({ voyageId, onAdd }) {
   const [open, setOpen] = useState(false)
   const [entry, setEntry] = useState(EMPTY_ENTRY)
   const [gpsLoading, setGpsLoading] = useState(false)
+  const [dateField, setDateField] = useState('')
+  const [timeField, setTimeField] = useState('')
+  const [editingTime, setEditingTime] = useState(false)
   const set = (k, v) => setEntry(prev => ({ ...prev, [k]: v }))
   const hasData = Object.values(entry).some(v => v.trim() !== '')
+
+  const openForm = () => {
+    setDateField(nowDateValue())
+    setTimeField(nowTimeValue())
+    setEditingTime(false)
+    setOpen(true)
+  }
+
+  const useCurrentTime = () => {
+    setDateField(nowDateValue())
+    setTimeField(nowTimeValue())
+    setEditingTime(false)
+  }
 
   const getGPS = () => {
     if (!navigator.geolocation) return
@@ -65,7 +95,12 @@ function LogEntryForm({ voyageId, onAdd }) {
 
   const handleSubmit = () => {
     if (!hasData) return
-    onAdd(voyageId, entry)
+    let time
+    if (dateField && timeField) {
+      const d = new Date(`${dateField}T${timeField}`)
+      if (!Number.isNaN(d.getTime())) time = d.toISOString()
+    }
+    onAdd(voyageId, time ? { ...entry, time } : entry)
     setEntry(EMPTY_ENTRY)
     setOpen(false)
   }
@@ -77,7 +112,7 @@ function LogEntryForm({ voyageId, onAdd }) {
 
   if (!open) {
     return (
-      <button className="log-form-collapsed" onClick={() => setOpen(true)}>
+      <button className="log-form-collapsed" onClick={openForm}>
         ＋ New Log Entry
       </button>
     )
@@ -88,6 +123,34 @@ function LogEntryForm({ voyageId, onAdd }) {
       <div className="log-form-header">
         <p className="log-form-title">New Log Entry</p>
         <button className="log-form-cancel" onClick={handleCancel}>✕</button>
+      </div>
+
+      <div className="log-gps-row">
+        <label className="log-field log-field--grow">
+          <span>Date</span>
+          <input
+            type="date"
+            value={dateField}
+            disabled={!editingTime}
+            onChange={e => setDateField(e.target.value)}
+          />
+        </label>
+        <label className="log-field log-field--grow">
+          <span>Time</span>
+          <input
+            type="time"
+            value={timeField}
+            disabled={!editingTime}
+            onChange={e => setTimeField(e.target.value)}
+          />
+        </label>
+        <button
+          className="gps-btn log-time-btn"
+          onClick={() => (editingTime ? useCurrentTime() : setEditingTime(true))}
+          title={editingTime ? 'Reset to current time' : 'Edit date & time'}
+        >
+          {editingTime ? 'Now' : 'Edit'}
+        </button>
       </div>
 
       <div className="log-gps-row">

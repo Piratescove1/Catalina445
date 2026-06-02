@@ -1438,6 +1438,18 @@ html, body, #root {
 
 .gps-btn:disabled { opacity: 0.5 }
 
+.log-time-btn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--cream-dim);
+  letter-spacing: 0.04em;
+}
+
+.log-field input:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 .log-textarea {
   background: var(--navy-mid);
   border: 1px solid var(--navy-light);
