@@ -1,4 +1,4 @@
-const CACHE = 'c445-v2'
+const CACHE = 'c445-v3'
 
 const PRECACHE = [
   '/',
@@ -21,12 +21,38 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
+
+  const req = e.request
+  const isPageRequest =
+    req.mode === 'navigate' || req.destination === 'document'
+
+  // Network-first for the app shell (HTML) so a new deploy loads immediately.
+  // Falls back to the cached page only when offline.
+  if (isPageRequest) {
+    e.respondWith(
+      fetch(req)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone()
+            caches.open(CACHE).then(c => c.put(req, clone))
+          }
+          return res
+        })
+        .catch(() =>
+          caches.match(req).then(c => c || caches.match('/index.html'))
+        )
+    )
+    return
+  }
+
+  // Cache-first for hashed assets (immutable) and everything else, with a
+  // background refresh so the cache stays current.
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const network = fetch(e.request).then(res => {
+    caches.match(req).then(cached => {
+      const network = fetch(req).then(res => {
         if (res.ok) {
           const clone = res.clone()
-          caches.open(CACHE).then(c => c.put(e.request, clone))
+          caches.open(CACHE).then(c => c.put(req, clone))
         }
         return res
       }).catch(() => cached)
