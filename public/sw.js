@@ -1,4 +1,6 @@
-const CACHE = 'c445-v3'
+// __BUILD_ID__ is replaced with a unique id at build time (see vite.config.js)
+// so every deploy gets a fresh cache name and the worker self-updates.
+const CACHE = 'c445-__BUILD_ID__'
 
 const PRECACHE = [
   '/',

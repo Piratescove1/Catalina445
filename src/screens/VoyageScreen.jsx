@@ -66,7 +66,7 @@ function LogEntryForm({ voyageId, onAdd }) {
     setOpen(true)
   }
 
-  const useCurrentTime = () => {
+  const applyCurrentDateTime = () => {
     setDateField(nowDateValue())
     setTimeField(nowTimeValue())
     setEditingTime(false)
@@ -146,7 +146,7 @@ function LogEntryForm({ voyageId, onAdd }) {
         </label>
         <button
           className="gps-btn log-time-btn"
-          onClick={() => (editingTime ? useCurrentTime() : setEditingTime(true))}
+          onClick={() => (editingTime ? applyCurrentDateTime() : setEditingTime(true))}
           title={editingTime ? 'Reset to current time' : 'Edit date & time'}
         >
           {editingTime ? 'Now' : 'Edit'}

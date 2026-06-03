@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { exportToExcel } from './lib/exportExcel'
 import { useInventory } from './hooks/useInventory'
 import { useMaintenance } from './hooks/useMaintenance'
@@ -114,6 +114,9 @@ export default function App() {
   const [showPrefs, setShowPrefs]     = useState(false)
   const [joinInput, setJoinInput]     = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [snapshots, setSnapshots]     = useState([])
+  const fileInputRef                  = useRef(null)
 
   const { prefs, setPref, importPrefs } = usePrefs()
 
@@ -165,7 +168,7 @@ export default function App() {
     importPrefs(remotePrefs)
   }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels, importPrefs])
 
-  const { status, boatId, push, pendingSync, resolveSync } = useSync({
+  const { status, boatId, push, pendingSync, resolveSync, listSnapshots, restoreSnapshot } = useSync({
     inventory, voyages, maintenance, futureProjects,
     ditchSop: sop, ditchItems, lockerInventory,
     provItems, provCategories, labels, prefs, onRemoteData,
@@ -174,6 +177,50 @@ export default function App() {
   useEffect(() => {
     push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs)
   }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
+
+  // ── Full JSON backup / restore ─────────────────────────────
+  const downloadBackup = useCallback(() => {
+    const data = {
+      _app: 'catalina445', _version: 1, exportedAt: new Date().toISOString(), boatId,
+      inventory, voyages, maintenance, futureProjects, ditchSop: sop, ditchItems,
+      lockerInventory, provItems, provCategories, labels, prefs,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `catalina445-backup-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }, [boatId, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
+
+  const restoreFromFile = useCallback((file) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const d = JSON.parse(reader.result)
+        onRemoteData(d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop, d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs)
+        alert('Backup restored. Your data has been replaced with the contents of the file.')
+      } catch {
+        alert('That file is not a valid Catalina 445 backup.')
+      }
+    }
+    reader.readAsText(file)
+  }, [onRemoteData])
+
+  // ── Cloud history (automatic snapshots) ────────────────────
+  const openHistory = useCallback(async () => {
+    setShowHistory(true)
+    setSnapshots(await listSnapshots())
+  }, [listSnapshots])
+
+  const doRestoreSnapshot = useCallback(async (id) => {
+    const ok = await restoreSnapshot(id)
+    setShowHistory(false)
+    alert(ok ? 'Restored from cloud backup.' : 'Could not restore that backup.')
+  }, [restoreSnapshot])
 
   return (
     <div className="app">
@@ -220,6 +267,28 @@ export default function App() {
             onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName })}
           >
             Download Excel Backup
+          </button>
+          <button className="export-btn" onClick={downloadBackup}>
+            Download Full Backup (JSON)
+          </button>
+          <button className="export-btn" onClick={() => fileInputRef.current?.click()}>
+            Restore from Backup File…
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            onChange={e => {
+              const f = e.target.files?.[0]
+              if (f && window.confirm('Restore from this backup file? This replaces your current data on all synced devices.')) {
+                restoreFromFile(f)
+              }
+              e.target.value = ''
+            }}
+          />
+          <button className="export-btn" onClick={openHistory}>
+            Cloud Backups…
           </button>
           <button className="sync-close" onClick={() => setShowPrefs(false)}>Done</button>
         </div>
@@ -331,6 +400,36 @@ export default function App() {
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />
+
+      {/* Cloud backups (history) dialog */}
+      {showHistory && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <p className="dialog-title">Cloud Backups</p>
+            <p className="dialog-body dialog-body--dim">
+              Automatic snapshots, newest first. Restoring replaces current data on all synced devices.
+            </p>
+            <div className="history-list">
+              {snapshots.length === 0 ? (
+                <p className="dialog-body">No cloud backups yet. They’re created automatically as you use the app.</p>
+              ) : (
+                snapshots.map(s => (
+                  <div key={s.id} className="history-row">
+                    <span className="history-when">{new Date(s.createdAt).toLocaleString()}</span>
+                    <button
+                      className="dialog-btn dialog-btn--danger"
+                      onClick={() => { if (window.confirm('Restore this backup? This replaces current data on all synced devices.')) doRestoreSnapshot(s.id) }}
+                    >
+                      Restore
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <button className="dialog-btn" onClick={() => setShowHistory(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
       {/* Reconnect dialog — step 1 */}
       {pendingSync && !showConfirm && (
