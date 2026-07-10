@@ -169,18 +169,21 @@ export default function App() {
     importPrefs(remotePrefs)
   }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels, importPrefs])
 
+  const {
+    account, persist, logout, bioAvailable, bioOn, enableBiometric, disableBiometric,
+    encryptData, decryptData,
+  } = useAuth()
+
   const { status, boatId, push, pendingSync, resolveSync, listSnapshots, restoreSnapshot } = useSync({
     inventory, voyages, maintenance, futureProjects,
     ditchSop: sop, ditchItems, lockerInventory,
     provItems, provCategories, labels, prefs, onRemoteData,
+    encrypt: encryptData, decrypt: decryptData,
   })
 
   useEffect(() => {
     push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs)
   }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
-
-  // Keep the encrypted local vault current on every change.
-  const { account, persist, logout, bioAvailable, bioOn, enableBiometric, disableBiometric } = useAuth()
 
   const handleEnableBiometric = async () => {
     try {

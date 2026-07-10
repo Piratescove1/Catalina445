@@ -62,7 +62,7 @@ export function joinBoat(id) {
   window.location.reload()
 }
 
-export function useSync({ inventory, voyages, maintenance, futureProjects, ditchSop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs, onRemoteData }) {
+export function useSync({ inventory, voyages, maintenance, futureProjects, ditchSop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs, onRemoteData, encrypt, decrypt }) {
   const [status, setStatus]           = useState(configured ? 'connecting' : 'unconfigured')
   const [pendingSync, setPendingSync] = useState(false)
   const [boatId]                      = useState(getBoatId)
@@ -75,6 +75,26 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
   // copy before it has had a chance to download it.
   const hydrated                      = useRef(false)
   const lastSnapshot                  = useRef(0)
+
+  // Push the decrypted payload fields up to the app.
+  const applyRemote = useCallback((p) => {
+    onRemoteData(p.inventory, p.voyages, p.maintenance, p.futureProjects, p.ditchSop, p.ditchItems, p.lockerInventory, p.provItems, p.provCategories, p.labels, p.prefs)
+  }, [onRemoteData])
+
+  // Wrap a payload for the cloud: encrypted end-to-end when we have a key.
+  const toCloud = useCallback(async (payload) => {
+    if (encrypt) return { enc: await encrypt(payload), v: 2 }
+    return payload // fallback (should not happen while unlocked)
+  }, [encrypt])
+
+  // Read a cloud doc's payload, handling both encrypted (v2) and legacy plaintext.
+  const fromCloud = useCallback(async (data) => {
+    if (data && data.enc) {
+      if (!decrypt) throw new Error('no-key')
+      return await decrypt(data.enc)
+    }
+    return buildPayload(data.inventory, data.voyages, data.maintenance, data.futureProjects, data.ditchSop, data.ditchItems, data.lockerInventory, data.provItems, data.provCategories, data.labels, data.prefs)
+  }, [decrypt])
 
   // Instantly reflect browser online/offline events
   useEffect(() => {
@@ -98,34 +118,48 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
     const ref = doc(db, 'boats', boatId)
     const unsub = onSnapshot(
       ref,
-      snap => {
+      async snap => {
         if (!snap.exists()) { hydrated.current = true; setStatus('synced'); return }
         const data = snap.data()
         if (data.deviceId === DEVICE_ID) { hydrated.current = true; setStatus('synced'); return }
-        ignoreNext.current = true
-        onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects, data.ditchSop, data.ditchItems, data.lockerInventory, data.provItems, data.provCategories, data.labels, data.prefs)
+        try {
+          const payload = await fromCloud(data)
+          ignoreNext.current = true
+          applyRemote(payload)
+          setTimeout(() => { ignoreNext.current = false }, 1000)
+          // Upgrade a legacy plaintext cloud copy to encrypted immediately.
+          if (!data.enc && encrypt) {
+            try {
+              const body = await toCloud(payload)
+              await setDoc(ref, { ...body, deviceId: DEVICE_ID, updatedAt: Date.now() })
+            } catch (e) { console.error('Cloud re-encrypt failed:', e) }
+          }
+        } catch (e) {
+          // Can't read remote (e.g. undecryptable) — keep local data, don't clobber.
+          console.error('Skipping unreadable remote data:', e)
+        }
         hydrated.current = true
-        setTimeout(() => { ignoreNext.current = false }, 1000)
         setStatus('synced')
       },
       () => setStatus('offline')
     )
     return unsub
-  }, [boatId, onRemoteData])
+  }, [boatId, fromCloud, applyRemote, encrypt, toCloud])
 
   // Write a timestamped history snapshot (throttled) and prune to MAX_SNAPSHOTS.
   const writeHistorySnapshot = useCallback(async (payload) => {
     if (!configured || !db) return
     try {
       const histCol = collection(db, 'boats', boatId, 'history')
-      await addDoc(histCol, { ...payload, createdAt: Date.now() })
+      const body = await toCloud(payload)
+      await addDoc(histCol, { ...body, createdAt: Date.now() })
       const all = await getDocs(query(histCol, orderBy('createdAt', 'desc')))
       const docs = all.docs
       for (let i = MAX_SNAPSHOTS; i < docs.length; i++) {
         await deleteDoc(docs[i].ref)
       }
     } catch (e) { console.error('History snapshot failed:', e) }
-  }, [boatId])
+  }, [boatId, toCloud])
 
   const maybeSnapshot = useCallback((payload) => {
     const now = Date.now()
@@ -161,12 +195,13 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
       if (ignoreNext.current || !hydrated.current) return
       setStatus('syncing')
       try {
-        await setDoc(doc(db, 'boats', boatId), { ...payload, deviceId: DEVICE_ID, updatedAt: Date.now() })
+        const body = await toCloud(payload)
+        await setDoc(doc(db, 'boats', boatId), { ...body, deviceId: DEVICE_ID, updatedAt: Date.now() })
         setStatus('synced')
         maybeSnapshot(payload)
       } catch (e) { console.error('Firestore push failed:', e); setStatus('offline') }
     }, 1500)
-  }, [boatId, pendingSync, maybeSnapshot])
+  }, [boatId, pendingSync, maybeSnapshot, toCloud])
 
   // Called from App when user responds to the reconnect dialog
   const resolveSync = useCallback(async (keepLocal) => {
@@ -176,7 +211,8 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
       const payload = pendingData.current
       setStatus('syncing')
       try {
-        await setDoc(doc(db, 'boats', boatId), { ...payload, deviceId: DEVICE_ID, updatedAt: Date.now() })
+        const body = await toCloud(payload)
+        await setDoc(doc(db, 'boats', boatId), { ...body, deviceId: DEVICE_ID, updatedAt: Date.now() })
         setStatus('synced')
         maybeSnapshot(payload)
       } catch (e) { console.error('Firestore resolveSync failed:', e); setStatus('offline') }
@@ -185,16 +221,16 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
       try {
         const snap = await getDoc(doc(db, 'boats', boatId))
         if (snap.exists()) {
-          const data = snap.data()
+          const payload = await fromCloud(snap.data())
           ignoreNext.current = true
-          onRemoteData(data.inventory, data.voyages, data.maintenance, data.futureProjects, data.ditchSop, data.ditchItems, data.lockerInventory, data.provItems, data.provCategories, data.labels, data.prefs)
+          applyRemote(payload)
           setTimeout(() => { ignoreNext.current = false }, 1000)
         }
         setStatus('synced')
       } catch { setStatus('offline') }
     }
     pendingData.current = null
-  }, [boatId, onRemoteData, maybeSnapshot])
+  }, [boatId, toCloud, fromCloud, applyRemote, maybeSnapshot])
 
   // List recent cloud history snapshots (newest first): [{ id, createdAt }]
   const listSnapshots = useCallback(async () => {
@@ -212,18 +248,15 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
     try {
       const snap = await getDoc(doc(db, 'boats', boatId, 'history', id))
       if (!snap.exists()) return false
-      const d = snap.data()
+      const payload = await fromCloud(snap.data())
       ignoreNext.current = true
-      onRemoteData(d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop, d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs)
-      const payload = buildPayload(
-        d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop,
-        d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs,
-      )
-      await setDoc(doc(db, 'boats', boatId), { ...payload, deviceId: DEVICE_ID, updatedAt: Date.now() })
+      applyRemote(payload)
+      const body = await toCloud(payload)
+      await setDoc(doc(db, 'boats', boatId), { ...body, deviceId: DEVICE_ID, updatedAt: Date.now() })
       setTimeout(() => { ignoreNext.current = false }, 1500)
       return true
     } catch (e) { console.error('Restore snapshot failed:', e); return false }
-  }, [boatId, onRemoteData])
+  }, [boatId, fromCloud, applyRemote, toCloud])
 
   return { status, boatId, push, pendingSync, resolveSync, listSnapshots, restoreSnapshot }
 }

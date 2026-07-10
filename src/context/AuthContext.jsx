@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import * as vault from '../lib/vault'
 import * as bio from '../lib/biometric'
+import { encryptJSON, decryptJSON } from '../lib/crypto'
 
 const AuthCtx = createContext(null)
 export const useAuth = () => useContext(AuthCtx)
@@ -114,6 +115,16 @@ export function AuthProvider({ children }) {
     if (dekRef.current) await vault.writeVault(dekRef.current)
   }, [])
 
+  // Encrypt/decrypt helpers bound to the in-memory boat key, for cloud sync.
+  const encryptData = useCallback(async (obj) => {
+    if (!dekRef.current) throw new Error('locked')
+    return encryptJSON(obj, dekRef.current)
+  }, [])
+  const decryptData = useCallback(async (blob) => {
+    if (!dekRef.current) throw new Error('locked')
+    return decryptJSON(blob, dekRef.current)
+  }, [])
+
   const logout = useCallback(() => {
     vault.clearLocalData()
     dekRef.current = null
@@ -127,6 +138,7 @@ export function AuthProvider({ children }) {
     bioAvailable, canBioUnlock, bioOn, lastUser,
     signup, login, recover, submitReset, confirmRecovery, persist, logout,
     unlockBiometric, enableBiometric, disableBiometric,
+    encryptData, decryptData,
   }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }
