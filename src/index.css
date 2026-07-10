@@ -575,6 +575,89 @@ html, body, #root {
   color: var(--cream);
 }
 
+/* ── Auth screen ─────────────────────────────────────────── */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--navy);
+  overflow-y: auto;
+}
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 16px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-brand {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0;
+}
+.auth-title { font-size: 1.4rem; color: var(--cream); margin: 0 0 4px; }
+.auth-note { font-size: 0.85rem; color: var(--cream-dim); line-height: 1.5; margin: 0; }
+.auth-input {
+  background: var(--navy);
+  border: 1px solid var(--navy-light);
+  border-radius: 8px;
+  color: var(--cream);
+  padding: 12px;
+  font-size: 1rem;
+}
+.auth-btn {
+  background: var(--brass);
+  border: none;
+  color: var(--navy);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.auth-btn:disabled { opacity: 0.5; cursor: default; }
+.auth-link {
+  background: none;
+  border: none;
+  color: var(--cream-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 6px;
+  text-decoration: underline;
+}
+.auth-error { color: #ff8a80; font-size: 0.85rem; margin: 0; }
+.auth-hint { color: var(--cream-dim); font-size: 0.78rem; margin: 0; }
+.auth-reccode {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  background: var(--navy);
+  border: 1px dashed var(--brass-dim);
+  border-radius: 8px;
+  color: var(--brass);
+  padding: 14px;
+  text-align: center;
+  word-break: break-all;
+}
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.account-who { font-size: 0.85rem; color: var(--cream-dim); }
+
 .dialog-btns {
   display: flex;
   flex-direction: column;

@@ -8,6 +8,7 @@ import { useProvisions } from './hooks/useProvisions'
 import { usePrefs } from './hooks/usePrefs'
 import { useLabels } from './hooks/useLabels'
 import { useSync, joinBoat } from './hooks/useSync'
+import { useAuth } from './context/AuthContext'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
@@ -178,6 +179,12 @@ export default function App() {
     push(inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs)
   }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
+  // Keep the encrypted local vault current on every change.
+  const { account, persist, logout } = useAuth()
+  useEffect(() => {
+    persist()
+  }, [persist, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
+
   // ── Full JSON backup / restore ─────────────────────────────
   const downloadBackup = useCallback(() => {
     const data = {
@@ -244,6 +251,12 @@ export default function App() {
       {showPrefs && (
         <div className="sync-panel sync-panel--scrollable">
           <p className="sync-panel-title">Settings</p>
+          {account && (
+            <div className="account-row">
+              <span className="account-who">Signed in as <strong>{account.displayName || account.username}</strong></span>
+              <button className="sync-close" onClick={logout}>Log out</button>
+            </div>
+          )}
           <div className="prefs-row">
             <label className="prefs-label">Boat Name</label>
             <input
