@@ -5,10 +5,16 @@ const ERR = {
   'no-such-user': 'No account found with that username.',
   'bad-password': 'Incorrect password.',
   'bad-recovery-code': 'That recovery code is not correct.',
+  'biometric-cancelled': 'Face ID was cancelled — enter your password.',
+  'prf-unavailable': 'Face ID unlock isn’t available here — enter your password.',
+  'not-enrolled': 'Face ID isn’t set up yet — log in with your password.',
 }
 
 export default function AuthScreen() {
-  const { firstRun, pendingRecovery, mustReset, signup, login, recover, submitReset, confirmRecovery } = useAuth()
+  const {
+    firstRun, pendingRecovery, mustReset, signup, login, recover, submitReset, confirmRecovery,
+    canBioUnlock, unlockBiometric,
+  } = useAuth()
 
   // 'login' | 'recover' — signup/reset/recovery are driven by context flags.
   const [mode, setMode] = useState(firstRun ? 'signup' : 'login')
@@ -106,6 +112,14 @@ export default function AuthScreen() {
   // ── Log in ──────────────────────────────────────────────────
   return (
     <AuthShell title="Log in">
+      {canBioUnlock && (
+        <>
+          <button className="auth-btn" disabled={busy} onClick={() => run(() => unlockBiometric())}>
+            {busy ? 'Unlocking…' : 'Unlock with Face ID'}
+          </button>
+          <p className="auth-hint auth-or">or log in with your password</p>
+        </>
+      )}
       <input className="auth-input" placeholder="Username" value={username}
         onChange={e => setUsername(e.target.value)} autoCapitalize="none"
         onKeyDown={e => e.key === 'Enter' && document.getElementById('auth-pw')?.focus()} />

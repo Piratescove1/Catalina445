@@ -180,7 +180,18 @@ export default function App() {
   }, [push, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
   // Keep the encrypted local vault current on every change.
-  const { account, persist, logout } = useAuth()
+  const { account, persist, logout, bioAvailable, bioOn, enableBiometric, disableBiometric } = useAuth()
+
+  const handleEnableBiometric = async () => {
+    try {
+      await enableBiometric()
+      alert('Face ID unlock enabled. Next time you open the app, tap “Unlock with Face ID”.')
+    } catch (e) {
+      alert(e?.message === 'prf-unsupported'
+        ? 'This device or browser can’t do secure Face ID unlock. Your password still works.'
+        : 'Could not enable Face ID unlock. Your password still works.')
+    }
+  }
   useEffect(() => {
     persist()
   }, [persist, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
@@ -255,6 +266,14 @@ export default function App() {
             <div className="account-row">
               <span className="account-who">Signed in as <strong>{account.displayName || account.username}</strong></span>
               <button className="sync-close" onClick={logout}>Log out</button>
+            </div>
+          )}
+          {account && bioAvailable && (
+            <div className="account-row">
+              <span className="account-who">Face ID / fingerprint unlock</span>
+              {bioOn
+                ? <button className="sync-close" onClick={disableBiometric}>Turn off</button>
+                : <button className="export-btn" onClick={handleEnableBiometric}>Turn on</button>}
             </div>
           )}
           <div className="prefs-row">

@@ -52,6 +52,10 @@ function findAccount(username) {
 export function accountExists(username) {
   return !!findAccount(username)
 }
+export function getAccount(username) {
+  const a = findAccount(username)
+  return a ? publicAccount(a) : null
+}
 
 // ── plaintext localStorage <-> object ──────────────────────
 function snapshotLocalData() {

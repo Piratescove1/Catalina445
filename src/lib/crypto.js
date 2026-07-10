@@ -94,6 +94,11 @@ export async function decryptJSON({ iv, ct }, dek) {
   return JSON.parse(dec.decode(pt))
 }
 
+// Import raw key bytes (e.g. a WebAuthn PRF output) as an AES-GCM key.
+export async function importAesKeyRaw(raw, usages = ['wrapKey', 'unwrapKey']) {
+  return subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, usages)
+}
+
 // ── recovery code ──────────────────────────────────────────
 // Human-friendly, unambiguous alphabet (no 0/O/1/I), grouped for readability.
 const RC_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'

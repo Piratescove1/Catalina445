@@ -637,6 +637,7 @@ html, body, #root {
 }
 .auth-error { color: #ff8a80; font-size: 0.85rem; margin: 0; }
 .auth-hint { color: var(--cream-dim); font-size: 0.78rem; margin: 0; }
+.auth-or { text-align: center; margin: 2px 0; }
 .auth-reccode {
   font-family: ui-monospace, Menlo, monospace;
   font-size: 1.05rem;
