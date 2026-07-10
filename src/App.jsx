@@ -15,6 +15,7 @@ import MaintenanceScreen from './screens/MaintenanceScreen'
 import DitchBagScreen from './screens/DitchBagScreen'
 import ProvisionsScreen from './screens/ProvisionsScreen'
 import NavBar from './components/NavBar'
+import HelpScreen from './components/HelpScreen'
 import './index.css'
 
 const STATUS_LABEL = {
@@ -116,6 +117,7 @@ export default function App() {
   const [joinInput, setJoinInput]     = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showHelp, setShowHelp]       = useState(false)
   const [snapshots, setSnapshots]     = useState([])
   const fileInputRef                  = useRef(null)
 
@@ -325,6 +327,9 @@ export default function App() {
           <button className="export-btn" onClick={openHistory}>
             Cloud Backups…
           </button>
+          <button className="export-btn" onClick={() => { setShowPrefs(false); setShowHelp(true) }}>
+            Help &amp; Guide
+          </button>
           <button className="sync-close" onClick={() => setShowPrefs(false)}>Done</button>
         </div>
       )}
@@ -435,6 +440,8 @@ export default function App() {
         />
       )}
       <NavBar active={screen} onNavigate={setScreen} />
+
+      {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
 
       {/* Cloud backups (history) dialog */}
       {showHistory && (

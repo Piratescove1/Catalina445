@@ -659,6 +659,58 @@ html, body, #root {
 }
 .account-who { font-size: 0.85rem; color: var(--cream-dim); }
 
+/* ── Help / guide overlay ────────────────────────────────── */
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(6, 15, 28, 0.92);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.help-panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.help-title { font-size: 1.2rem; font-weight: 700; color: var(--cream); margin: 0; }
+.help-body { display: flex; flex-direction: column; gap: 16px; }
+.help-callout {
+  background: var(--navy);
+  border: 1px solid var(--brass-dim);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.85rem;
+  color: var(--cream);
+  line-height: 1.5;
+}
+.help-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.help-section p { font-size: 0.9rem; color: var(--cream); line-height: 1.55; margin: 0 0 8px; }
+.help-warn { color: #ffd8a8 !important; }
+.help-list { margin: 0; padding-left: 18px; }
+.help-list li { font-size: 0.9rem; color: var(--cream); line-height: 1.55; margin-bottom: 6px; }
+
 .dialog-btns {
   display: flex;
   flex-direction: column;
