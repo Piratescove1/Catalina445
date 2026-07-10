@@ -32,6 +32,13 @@ const DEVICE_ID   = Math.random().toString(36).slice(2, 10)
 const SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000
 const MAX_SNAPSHOTS = 20
 
+// TEMPORARILY OFF until Phase 3 (a shared boat key across devices). While off,
+// the cloud stores plaintext so devices that each have their own local key can
+// still sync with each other. Reads still DECRYPT any legacy-encrypted doc, so
+// nothing is lost, and the copy is converted back to plaintext on next load.
+// Flip to true once Phase 3 shares one key across all devices.
+const CLOUD_ENCRYPTION = false
+
 function buildPayload(inv, voy, maint, future, dSop, dItems, lockers, prov, provCats, lbls, prfs) {
   return {
     inventory:       inv      || [],
@@ -83,8 +90,8 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
 
   // Wrap a payload for the cloud: encrypted end-to-end when we have a key.
   const toCloud = useCallback(async (payload) => {
-    if (encrypt) return { enc: await encrypt(payload), v: 2 }
-    return payload // fallback (should not happen while unlocked)
+    if (CLOUD_ENCRYPTION && encrypt) return { enc: await encrypt(payload), v: 2 }
+    return payload // plaintext while cloud encryption is off (pre-Phase 3)
   }, [encrypt])
 
   // Read a cloud doc's payload, handling both encrypted (v2) and legacy plaintext.
@@ -127,12 +134,14 @@ export function useSync({ inventory, voyages, maintenance, futureProjects, ditch
           ignoreNext.current = true
           applyRemote(payload)
           setTimeout(() => { ignoreNext.current = false }, 1000)
-          // Upgrade a legacy plaintext cloud copy to encrypted immediately.
-          if (!data.enc && encrypt) {
+          // Convert the stored copy to the current mode (encrypted vs plaintext)
+          // whenever we can read it — migrates the cloud doc after a mode switch.
+          const storedEncrypted = !!data.enc
+          if (storedEncrypted !== CLOUD_ENCRYPTION && (!CLOUD_ENCRYPTION || !!encrypt)) {
             try {
               const body = await toCloud(payload)
               await setDoc(ref, { ...body, deviceId: DEVICE_ID, updatedAt: Date.now() })
-            } catch (e) { console.error('Cloud re-encrypt failed:', e) }
+            } catch (e) { console.error('Cloud mode migration failed:', e) }
           }
         } catch (e) {
           // Can't read remote (e.g. undecryptable) — keep local data, don't clobber.
