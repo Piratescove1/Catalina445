@@ -658,6 +658,13 @@ html, body, #root {
   margin-bottom: 8px;
 }
 .account-who { font-size: 0.85rem; color: var(--cream-dim); }
+.link-bundle {
+  width: 100%;
+  min-height: 64px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.72rem;
+  word-break: break-all;
+}
 
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {

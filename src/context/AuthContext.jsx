@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import * as vault from '../lib/vault'
 import * as bio from '../lib/biometric'
+import * as linking from '../lib/linking'
 import { encryptJSON, decryptJSON } from '../lib/crypto'
 
 const AuthCtx = createContext(null)
@@ -125,6 +126,25 @@ export function AuthProvider({ children }) {
     return decryptJSON(blob, dekRef.current)
   }, [])
 
+  // ── Device linking (Phase 3): share one boat key across devices ──
+  const createDeviceLink = useCallback(async () => {
+    if (!dekRef.current) throw new Error('locked')
+    const boatId = localStorage.getItem('c445-boat-id') || ''
+    return linking.createLinkBundle(dekRef.current, boatId) // { code, bundle }
+  }, [])
+
+  const linkThisDevice = useCallback(async ({ bundle, code, password }) => {
+    if (!account) throw new Error('locked')
+    const { dek, boatId } = await linking.redeemLinkBundle(bundle, code)
+    const { recoveryCode } = await vault.changeBoatKey({ username: account.username, password, newDek: dek })
+    if (boatId) localStorage.setItem('c445-boat-id', boatId)
+    dekRef.current = dek
+    await vault.writeVault(dek)        // re-encrypt local vault with the shared key
+    bio.disable(account.username)      // old Face ID enrolment wrapped the old key
+    setBioOn(false)
+    return recoveryCode                // caller shows it, then reloads
+  }, [account])
+
   const logout = useCallback(() => {
     vault.clearLocalData()
     dekRef.current = null
@@ -139,6 +159,7 @@ export function AuthProvider({ children }) {
     signup, login, recover, submitReset, confirmRecovery, persist, logout,
     unlockBiometric, enableBiometric, disableBiometric,
     encryptData, decryptData,
+    createDeviceLink, linkThisDevice,
   }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

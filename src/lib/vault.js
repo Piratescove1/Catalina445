@@ -163,6 +163,30 @@ export async function recover({ username, recoveryCode }) {
   return { dek, account: publicAccount(account) }
 }
 
+// Swap this account to a different (shared) boat key, keeping the same password.
+// Verifies the password first, re-wraps the new DEK, and issues a fresh recovery
+// code (the old one wrapped the old key). Used by device linking (Phase 3).
+export async function changeBoatKey({ username, password, newDek }) {
+  const list = loadAccounts()
+  const idx = list.findIndex(a => a.username === (username || '').trim().toLowerCase())
+  if (idx < 0) throw new Error('no-such-user')
+  const acc = list[idx]
+  const kek = await deriveKEK(password, acc.salt, acc.iterations)
+  try {
+    await unwrapDEK(acc.wrappedDEK, kek) // verify password
+  } catch {
+    throw new Error('bad-password')
+  }
+  const wrappedDEK = await wrapDEK(newDek, kek)
+  const recoveryCode = generateRecoveryCode()
+  const recoverySalt = newSaltB64()
+  const recKek = await deriveKEK(normalizeRecoveryCode(recoveryCode), recoverySalt)
+  const recWrapped = await wrapDEK(newDek, recKek)
+  list[idx] = { ...acc, wrappedDEK, recovery: { salt: recoverySalt, wrappedDEK: recWrapped } }
+  saveAccounts(list)
+  return { recoveryCode }
+}
+
 // Re-wrap the DEK under a new password (and issue a fresh recovery code).
 export async function resetPassword({ username, newPassword, dek }) {
   const list = loadAccounts()

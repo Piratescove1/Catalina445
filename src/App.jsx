@@ -16,6 +16,7 @@ import DitchBagScreen from './screens/DitchBagScreen'
 import ProvisionsScreen from './screens/ProvisionsScreen'
 import NavBar from './components/NavBar'
 import HelpScreen from './components/HelpScreen'
+import LinkDevice from './components/LinkDevice'
 import './index.css'
 
 const STATUS_LABEL = {
@@ -118,6 +119,7 @@ export default function App() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [showHelp, setShowHelp]       = useState(false)
+  const [linkMode, setLinkMode]       = useState(null) // 'share' | 'receive' | null
   const [snapshots, setSnapshots]     = useState([])
   const fileInputRef                  = useRef(null)
 
@@ -327,6 +329,18 @@ export default function App() {
           <button className="export-btn" onClick={openHistory}>
             Cloud Backups…
           </button>
+          {account && (
+            <div className="account-row">
+              <span className="account-who">Share boat with another device</span>
+              <button className="export-btn" onClick={() => { setShowPrefs(false); setLinkMode('share') }}>Link…</button>
+            </div>
+          )}
+          {account && (
+            <div className="account-row">
+              <span className="account-who">Link this device to a boat</span>
+              <button className="export-btn" onClick={() => { setShowPrefs(false); setLinkMode('receive') }}>Receive…</button>
+            </div>
+          )}
           <button className="export-btn" onClick={() => { setShowPrefs(false); setShowHelp(true) }}>
             Help &amp; Guide
           </button>
@@ -442,6 +456,8 @@ export default function App() {
       <NavBar active={screen} onNavigate={setScreen} />
 
       {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
+
+      {linkMode && <LinkDevice mode={linkMode} onClose={() => setLinkMode(null)} />}
 
       {/* Cloud backups (history) dialog */}
       {showHistory && (

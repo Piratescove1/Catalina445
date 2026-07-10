@@ -112,9 +112,20 @@ export function generateRecoveryCode() {
   return out // e.g. WXQ7-2K9M-...-....
 }
 
-// Normalize user-typed recovery codes (strip spaces/dashes, uppercase).
+// Normalize user-typed recovery/transfer codes (strip spaces/dashes, uppercase).
 export function normalizeRecoveryCode(code) {
   return (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+}
+
+// Shorter one-time code for device-to-device linking, e.g. WXQ7-2K9M.
+export function generateTransferCode() {
+  const bytes = randomBytes(8)
+  let out = ''
+  for (let i = 0; i < bytes.length; i++) {
+    if (i === 4) out += '-'
+    out += RC_ALPHABET[bytes[i] % RC_ALPHABET.length]
+  }
+  return out
 }
 
 export { PBKDF2_ITERATIONS }
