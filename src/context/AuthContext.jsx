@@ -133,9 +133,8 @@ export function AuthProvider({ children }) {
     return linking.createLinkBundle(dekRef.current, boatId) // { code, bundle }
   }, [])
 
-  const linkThisDevice = useCallback(async ({ bundle, code, password }) => {
-    if (!account) throw new Error('locked')
-    const { dek, boatId } = await linking.redeemLinkBundle(bundle, code)
+  // Adopt a shared key onto this device (shared logic for QR and typing code).
+  const adoptSharedKey = useCallback(async ({ dek, boatId, password }) => {
     const { recoveryCode } = await vault.changeBoatKey({ username: account.username, password, newDek: dek })
     if (boatId) localStorage.setItem('c445-boat-id', boatId)
     dekRef.current = dek
@@ -144,6 +143,26 @@ export function AuthProvider({ children }) {
     setBioOn(false)
     return recoveryCode                // caller shows it, then reloads
   }, [account])
+
+  // QR / paste path.
+  const linkThisDevice = useCallback(async ({ bundle, code, password }) => {
+    if (!account) throw new Error('locked')
+    const { dek, boatId } = await linking.redeemLinkBundle(bundle, code)
+    return adoptSharedKey({ dek, boatId, password })
+  }, [account, adoptSharedKey])
+
+  // Typing-code path (needs internet): source parks the key in the cloud.
+  const startPairingLink = useCallback(async () => {
+    if (!dekRef.current) throw new Error('locked')
+    const boatId = localStorage.getItem('c445-boat-id') || ''
+    return linking.startPairing(dekRef.current, boatId) // returns the short code
+  }, [])
+
+  const linkWithCode = useCallback(async ({ code, password }) => {
+    if (!account) throw new Error('locked')
+    const { dek, boatId } = await linking.redeemPairing(code)
+    return adoptSharedKey({ dek, boatId, password })
+  }, [account, adoptSharedKey])
 
   const logout = useCallback(() => {
     vault.clearLocalData()
@@ -159,7 +178,7 @@ export function AuthProvider({ children }) {
     signup, login, recover, submitReset, confirmRecovery, persist, logout,
     unlockBiometric, enableBiometric, disableBiometric,
     encryptData, decryptData,
-    createDeviceLink, linkThisDevice,
+    createDeviceLink, linkThisDevice, startPairingLink, linkWithCode,
   }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

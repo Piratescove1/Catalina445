@@ -685,6 +685,27 @@ html, body, #root {
   border: 1px solid var(--navy-light);
 }
 .link-ok { color: #9ae6b4; font-weight: 600; font-size: 0.9rem; text-align: center; margin: 0; }
+.link-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--navy);
+  border: 1px solid var(--navy-light);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 4px;
+}
+.link-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--cream-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.link-tab--active { background: var(--brass); color: var(--navy); }
 
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {
