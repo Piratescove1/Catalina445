@@ -707,6 +707,42 @@ html, body, #root {
 }
 .link-tab--active { background: var(--brass); color: var(--navy); }
 
+/* ── Licensing ───────────────────────────────────────────── */
+.lic-banner {
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  color: var(--navy);
+}
+.lic-banner--expired { background: #ff8a80; color: #3b0d0a; }
+.lic-banner--trial { background: var(--brass); }
+.lic-banner--active { background: #ffe8bf; color: #5b3d00; }
+.lic-status {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.lic-status--active { background: rgba(154,230,180,0.16); color: #9ae6b4; }
+.lic-status--trial { background: rgba(184,134,11,0.18); color: var(--brass); }
+.lic-status--expired { background: rgba(255,138,128,0.18); color: #ff8a80; }
+.lic-plans { display: flex; flex-direction: column; gap: 8px; }
+.lic-plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--navy);
+  border: 1px solid var(--navy-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.lic-plan-label { font-size: 0.95rem; font-weight: 700; color: var(--cream); margin: 0; }
+.lic-plan-price { font-size: 0.8rem; color: var(--cream-dim); margin: 2px 0 0; }
+.lic-buy { width: auto; padding: 8px 16px; margin: 0; }
+
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {
   position: fixed;

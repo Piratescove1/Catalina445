@@ -17,6 +17,8 @@ import ProvisionsScreen from './screens/ProvisionsScreen'
 import NavBar from './components/NavBar'
 import HelpScreen from './components/HelpScreen'
 import LinkDevice from './components/LinkDevice'
+import LicenseScreen from './components/LicenseScreen'
+import { useLicense } from './hooks/useLicense'
 import './index.css'
 
 const STATUS_LABEL = {
@@ -120,6 +122,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [showHelp, setShowHelp]       = useState(false)
   const [linkMode, setLinkMode]       = useState(null) // 'share' | 'receive' | null
+  const [showLicense, setShowLicense] = useState(false)
   const [snapshots, setSnapshots]     = useState([])
   const fileInputRef                  = useRef(null)
 
@@ -203,6 +206,12 @@ export default function App() {
     persist()
   }, [persist, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
+  const license = useLicense(boatId)
+  const handleCheckout = (plan) => {
+    // Phase 4b wires this to Stripe Checkout for the selected plan.
+    alert(`Online payment for the ${plan.label} plan will be enabled once Stripe is connected.`)
+  }
+
   // ── Full JSON backup / restore ─────────────────────────────
   const downloadBackup = useCallback(() => {
     const data = {
@@ -265,6 +274,19 @@ export default function App() {
         </div>
       )}
 
+      {/* License banner */}
+      {(license.status === 'expired'
+        || (license.status === 'trial' && license.daysLeft <= 7)
+        || (license.status === 'active' && license.daysLeft <= 14)) && (
+        <div className={`lic-banner lic-banner--${license.status}`} onClick={() => setShowLicense(true)}>
+          {license.status === 'expired'
+            ? 'Subscription expired — tap to renew (cloud sync & backups paused)'
+            : license.status === 'trial'
+              ? `Free trial: ${license.daysLeft} day${license.daysLeft === 1 ? '' : 's'} left — tap to subscribe`
+              : `Subscription ends in ${license.daysLeft} days — tap to renew`}
+        </div>
+      )}
+
       {/* Settings panel */}
       {showPrefs && (
         <div className="sync-panel sync-panel--scrollable">
@@ -275,6 +297,16 @@ export default function App() {
               <button className="sync-close" onClick={logout}>Log out</button>
             </div>
           )}
+          <div className="account-row">
+            <span className="account-who">
+              Subscription: {license.status === 'active'
+                ? `active (${license.daysLeft}d left)`
+                : license.status === 'trial'
+                  ? `trial (${license.daysLeft}d left)`
+                  : 'expired'}
+            </span>
+            <button className="export-btn" onClick={() => { setShowPrefs(false); setShowLicense(true) }}>Manage</button>
+          </div>
           {account && bioAvailable && (
             <div className="account-row">
               <span className="account-who">Face ID / fingerprint unlock</span>
@@ -326,8 +358,8 @@ export default function App() {
               e.target.value = ''
             }}
           />
-          <button className="export-btn" onClick={openHistory}>
-            Cloud Backups…
+          <button className="export-btn" onClick={openHistory} disabled={!license.premiumActive}>
+            {license.premiumActive ? 'Cloud Backups…' : 'Cloud Backups (renew to use)'}
           </button>
           {account && (
             <div className="account-row">
@@ -458,6 +490,8 @@ export default function App() {
       {showHelp && <HelpScreen onClose={() => setShowHelp(false)} />}
 
       {linkMode && <LinkDevice mode={linkMode} onClose={() => setLinkMode(null)} />}
+
+      {showLicense && <LicenseScreen license={license} onClose={() => setShowLicense(false)} onCheckout={handleCheckout} />}
 
       {/* Cloud backups (history) dialog */}
       {showHistory && (
