@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import QRCode from 'qrcode'
+import jsQR from 'jsqr'
 import { useAuth } from '../context/AuthContext'
 
 const ERR = {
-  'bad-bundle': 'That link text doesn’t look right. Copy it again from the other device.',
+  'bad-bundle': 'That link doesn’t look right — scan the QR code again.',
   'bad-code': 'That transfer code is not correct.',
   'bad-password': 'Incorrect password for this device.',
 }
@@ -22,51 +24,44 @@ export default function LinkDevice({ mode, onClose }) {
   )
 }
 
+// ── Source device: show the QR + transfer code ──────────────
 function ShareSide() {
   const { createDeviceLink } = useAuth()
   const [data, setData] = useState(null)
+  const [qr, setQr] = useState('')
   const [error, setError] = useState('')
-  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     createDeviceLink().then(setData).catch(() => setError('Could not create a link. Make sure you’re logged in.'))
   }, [createDeviceLink])
 
+  useEffect(() => {
+    if (data) QRCode.toDataURL(data.bundle, { width: 260, margin: 1, errorCorrectionLevel: 'M' }).then(setQr).catch(() => {})
+  }, [data])
+
   if (error) return <p className="auth-error">{error}</p>
   if (!data) return <p className="auth-note">Preparing…</p>
 
-  const share = async () => {
-    try { await navigator.share({ title: 'Catalina 445 link', text: data.bundle }) } catch { /* cancelled */ }
-  }
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(data.bundle); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* ignore */ }
-  }
-
   return (
     <>
-      <p className="auth-note">On the <strong>other</strong> device: Settings → <strong>Link this device</strong>,
-      paste the link below, and enter this transfer code.</p>
-
-      <p className="help-section-title" style={{ marginBottom: 2 }}>Transfer code</p>
+      <p className="auth-note">On the <strong>other</strong> device: Settings → <strong>Link this device</strong> →
+      <strong> Scan QR code</strong>, point it at this screen, then enter the transfer code below.</p>
+      {qr && <img className="qr-img" src={qr} alt="Link QR code" />}
+      <p className="help-section-title" style={{ marginBottom: 2, textAlign: 'center' }}>Transfer code</p>
       <div className="auth-reccode">{data.code}</div>
-
-      <p className="help-section-title" style={{ marginTop: 8, marginBottom: 2 }}>Link text</p>
-      <textarea className="log-textarea link-bundle" readOnly value={data.bundle} onFocus={e => e.target.select()} />
-      <div className="row" style={{ display: 'flex', gap: 8 }}>
-        {navigator.share && <button className="auth-btn" style={{ flex: 1 }} onClick={share}>Share (AirDrop…)</button>}
-        <button className="export-btn" style={{ flex: 1 }} onClick={copy}>{copied ? 'Copied ✓' : 'Copy link'}</button>
-      </div>
-      <p className="auth-hint">The link is encrypted — it’s useless without the transfer code. Read the code out
-      loud or send it separately.</p>
+      <p className="auth-hint">The QR is encrypted — it’s useless without the transfer code, so it’s safe to show.</p>
     </>
   )
 }
 
+// ── Target device: scan the QR, enter code + password ───────
 function ReceiveSide() {
   const { linkThisDevice } = useAuth()
   const [bundle, setBundle] = useState('')
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
+  const [scanning, setScanning] = useState(false)
+  const [showPaste, setShowPaste] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [recoveryCode, setRecoveryCode] = useState(null)
@@ -74,8 +69,7 @@ function ReceiveSide() {
   const submit = async () => {
     setError(''); setBusy(true)
     try {
-      const rc = await linkThisDevice({ bundle, code, password })
-      setRecoveryCode(rc)
+      setRecoveryCode(await linkThisDevice({ bundle, code, password }))
     } catch (e) {
       setError(ERR[e.message] || 'Could not link this device. Please try again.')
     } finally { setBusy(false) }
@@ -87,18 +81,33 @@ function ReceiveSide() {
         <p className="auth-note">✅ This device now shares the boat key. Save your <strong>new</strong> recovery
         code (the old one no longer works), then reload.</p>
         <div className="auth-reccode">{recoveryCode}</div>
-        <p className="auth-hint">You’ll log in again after reloading, and you can re-enable Face ID in Settings.</p>
+        <p className="auth-hint">You’ll log in again after reloading; re-enable Face ID in Settings if you want it.</p>
         <button className="auth-btn" onClick={() => window.location.reload()}>I’ve saved it — reload</button>
       </>
     )
   }
 
+  if (scanning) {
+    return <QrScanner onResult={(t) => { setBundle(t); setScanning(false) }} onCancel={() => setScanning(false)} />
+  }
+
   return (
     <>
-      <p className="auth-note">Paste the link text from your other device, then enter its transfer code and
+      <p className="auth-note">Scan the QR shown on your other device, then enter its transfer code and
       <strong> this device’s</strong> password.</p>
-      <textarea className="log-textarea link-bundle" placeholder="Paste link text here" value={bundle}
-        onChange={e => setBundle(e.target.value)} />
+
+      {bundle
+        ? <p className="link-ok">✓ QR captured</p>
+        : <button className="auth-btn" onClick={() => { setError(''); setScanning(true) }}>Scan QR code</button>}
+
+      <button className="auth-link" onClick={() => setShowPaste(v => !v)}>
+        {showPaste ? 'Hide paste option' : 'Can’t scan? Paste link instead'}
+      </button>
+      {showPaste && (
+        <textarea className="log-textarea link-bundle" placeholder="Paste link text" value={bundle}
+          onChange={e => setBundle(e.target.value)} />
+      )}
+
       <input className="auth-input" placeholder="Transfer code" value={code}
         onChange={e => setCode(e.target.value)} autoCapitalize="characters" />
       <input className="auth-input" type="password" placeholder="This device’s password" value={password}
@@ -107,5 +116,68 @@ function ReceiveSide() {
       <button className="auth-btn" disabled={busy || !bundle.trim() || !code.trim() || !password}
         onClick={submit}>{busy ? 'Linking…' : 'Link this device'}</button>
     </>
+  )
+}
+
+// ── Camera QR scanner (jsQR) ────────────────────────────────
+function QrScanner({ onResult, onCancel }) {
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const [error, setError] = useState('')
+
+  const stop = useCallback((stream, raf) => {
+    if (raf) cancelAnimationFrame(raf)
+    if (stream) stream.getTracks().forEach(t => t.stop())
+  }, [])
+
+  useEffect(() => {
+    let stream = null
+    let raf = null
+    let done = false
+
+    const tick = () => {
+      const v = videoRef.current
+      const c = canvasRef.current
+      if (!done && v && c && v.readyState === v.HAVE_ENOUGH_DATA) {
+        c.width = v.videoWidth
+        c.height = v.videoHeight
+        const ctx = c.getContext('2d', { willReadFrequently: true })
+        ctx.drawImage(v, 0, 0, c.width, c.height)
+        const img = ctx.getImageData(0, 0, c.width, c.height)
+        const found = jsQR(img.data, img.width, img.height)
+        if (found && found.data) {
+          done = true
+          stop(stream, raf)
+          onResult(found.data)
+          return
+        }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(s => {
+        stream = s
+        const v = videoRef.current
+        if (!v) return
+        v.srcObject = s
+        v.setAttribute('playsinline', 'true')
+        return v.play()
+      })
+      .then(() => { raf = requestAnimationFrame(tick) })
+      .catch(() => setError('Camera not available. Use “Paste link instead”.'))
+
+    return () => { done = true; stop(stream, raf) }
+  }, [onResult, stop])
+
+  return (
+    <div className="qr-scan">
+      {error
+        ? <p className="auth-error">{error}</p>
+        : <video ref={videoRef} className="qr-video" muted playsInline />}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <p className="auth-hint">Point the camera at the QR code on your other device.</p>
+      <button className="sync-close" onClick={onCancel}>Cancel</button>
+    </div>
   )
 }

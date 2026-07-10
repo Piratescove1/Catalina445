@@ -665,6 +665,26 @@ html, body, #root {
   font-size: 0.72rem;
   word-break: break-all;
 }
+.qr-img {
+  display: block;
+  width: 240px;
+  max-width: 80%;
+  margin: 4px auto;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+}
+.qr-scan { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.qr-video {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #000;
+  border: 1px solid var(--navy-light);
+}
+.link-ok { color: #9ae6b4; font-weight: 600; font-size: 0.9rem; text-align: center; margin: 0; }
 
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {
