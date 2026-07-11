@@ -4,7 +4,8 @@ import * as vault from '../lib/vault'
 import * as bio from '../lib/biometric'
 import * as linking from '../lib/linking'
 import * as cloud from '../lib/cloudAccount'
-import { encryptJSON, decryptJSON } from '../lib/crypto'
+import { getBoatId } from '../hooks/useSync'
+import { encryptJSON, decryptJSON, generateDEK } from '../lib/crypto'
 
 const AuthCtx = createContext(null)
 export const useAuth = () => useContext(AuthCtx)
@@ -48,12 +49,20 @@ export function AuthProvider({ children }) {
     setLastUser(username)
   }, [])
 
-  const signup = useCallback(async (username, password) => {
-    const { dek, recoveryCode, account } = await vault.createFirstAccount({ username, password })
+  // Sign up = create the CLOUD account first (so recovery is always set up),
+  // then the local account with the same key. Requires connectivity.
+  const signup = useCallback(async (email, password) => {
+    const em = (email || '').trim()
+    const dek = await generateDEK()
+    const boatId = getBoatId()
+    await cloud.enableCloudBackup({ email: em, password, dek, boatId }) // throws if offline / provider off / email in use
+    const { recoveryCode, account } = await vault.createFirstAccountWithKey({ username: em, password, dek })
     dekRef.current = dek
     setAccount(account)
     rememberUser(account.username)
-    setBioOn(false) // brand-new account, not enrolled yet
+    localStorage.setItem('c445-cloud-email', em)
+    setCloudEmail(em)
+    setBioOn(false)
     setFirstRun(false)
     setPendingRecovery(recoveryCode) // stay locked until the code is acknowledged
   }, [rememberUser])

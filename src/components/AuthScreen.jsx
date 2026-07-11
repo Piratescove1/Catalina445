@@ -17,6 +17,8 @@ const ERR = {
   'offline': 'You need an internet connection for cloud login.',
 }
 
+const isEmail = (s) => /.+@.+\..+/.test((s || '').trim())
+
 export default function AuthScreen() {
   const {
     firstRun, pendingRecovery, mustReset, signup, login, recover, submitReset, confirmRecovery,
@@ -97,19 +99,21 @@ export default function AuthScreen() {
   if (mode === 'signup') {
     return (
       <AuthShell title="Create your account">
-        <p className="auth-note">This account will hold your boat’s data. It works offline once created.</p>
-        <input className="auth-input" placeholder="Username" value={username}
-          onChange={e => setUsername(e.target.value)} autoCapitalize="none" />
+        <p className="auth-note">Your <strong>email</strong> is how you log back in on any device — so you can never
+        lose access. Creating the account needs internet (do it at the dock); after that it works offline.</p>
+        <input className="auth-input" type="email" placeholder="Email" value={username}
+          onChange={e => setUsername(e.target.value)} autoCapitalize="none" inputMode="email" autoComplete="email" />
         <input className="auth-input" type="password" placeholder="Password" value={password}
           onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
         <input className="auth-input" type="password" placeholder="Confirm password" value={confirm}
           onChange={e => setConfirm(e.target.value)} autoComplete="new-password" />
         {error && <p className="auth-error">{error}</p>}
         <button className="auth-btn"
-          disabled={busy || !username.trim() || password.length < 6 || password !== confirm}
+          disabled={busy || !isEmail(username) || password.length < 6 || password !== confirm}
           onClick={() => run(() => signup(username, password))}>
-          {busy ? 'Creating…' : 'Create account'}
+          {busy ? 'Creating account…' : 'Create account'}
         </button>
+        {username && !isEmail(username) && <p className="auth-hint">Enter a valid email address.</p>}
         {password && password.length < 6 && <p className="auth-hint">Password must be at least 6 characters.</p>}
         {confirm && password !== confirm && <p className="auth-hint">Passwords don’t match.</p>}
         {cloudReady && (

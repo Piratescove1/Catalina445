@@ -118,6 +118,15 @@ export async function createAccountFromKey({ username, password, dek }) {
   return { dek, recoveryCode, account: publicAccount(account) }
 }
 
+// Like createAccountFromKey, but also captures existing localStorage data into
+// the vault (used at sign-up, where the cloud account is created first with a
+// pre-generated DEK, then the local account with that same DEK).
+export async function createFirstAccountWithKey({ username, password, dek }) {
+  const res = await createAccountFromKey({ username, password, dek })
+  await writeVault(dek)
+  return res
+}
+
 // Build a record wrapping the given DEK under a new password + recovery code.
 async function buildAccountRecord({ username, password, dek, role }) {
   const salt = newSaltB64()
