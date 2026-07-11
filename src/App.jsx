@@ -18,6 +18,7 @@ import NavBar from './components/NavBar'
 import HelpScreen from './components/HelpScreen'
 import LinkDevice from './components/LinkDevice'
 import LicenseScreen from './components/LicenseScreen'
+import CloudLogin from './components/CloudLogin'
 import { useLicense } from './hooks/useLicense'
 import { useCompartments } from './context/CompartmentsContext'
 import './index.css'
@@ -124,6 +125,7 @@ export default function App() {
   const [showHelp, setShowHelp]       = useState(false)
   const [linkMode, setLinkMode]       = useState(null) // 'share' | 'receive' | null
   const [showLicense, setShowLicense] = useState(false)
+  const [showCloud, setShowCloud]     = useState(false)
   const [snapshots, setSnapshots]     = useState([])
   const fileInputRef                  = useRef(null)
 
@@ -179,7 +181,7 @@ export default function App() {
 
   const {
     account, persist, logout, bioAvailable, bioOn, enableBiometric, disableBiometric,
-    encryptData, decryptData,
+    encryptData, decryptData, cloudEmail,
   } = useAuth()
 
   const { status, boatId, push, pendingSync, resolveSync, listSnapshots, restoreSnapshot } = useSync({
@@ -311,6 +313,14 @@ export default function App() {
             </span>
             <button className="export-btn" onClick={() => { setShowPrefs(false); setShowLicense(true) }}>Manage</button>
           </div>
+          {account && (
+            <div className="account-row">
+              <span className="account-who">Cloud login {cloudEmail ? `— ${cloudEmail}` : '(off)'}</span>
+              <button className="export-btn" onClick={() => { setShowPrefs(false); setShowCloud(true) }}>
+                {cloudEmail ? 'Manage' : 'Enable'}
+              </button>
+            </div>
+          )}
           {account && bioAvailable && (
             <div className="account-row">
               <span className="account-who">Face ID / fingerprint unlock</span>
@@ -496,6 +506,8 @@ export default function App() {
       {linkMode && <LinkDevice mode={linkMode} onClose={() => setLinkMode(null)} />}
 
       {showLicense && <LicenseScreen license={license} onClose={() => setShowLicense(false)} onCheckout={handleCheckout} />}
+
+      {showCloud && <CloudLogin onClose={() => setShowCloud(false)} />}
 
       {/* Cloud backups (history) dialog */}
       {showHistory && (

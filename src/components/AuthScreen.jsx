@@ -8,12 +8,19 @@ const ERR = {
   'biometric-cancelled': 'Face ID was cancelled — enter your password.',
   'prf-unavailable': 'Face ID unlock isn’t available here — enter your password.',
   'not-enrolled': 'Face ID isn’t set up yet — log in with your password.',
+  'auth-not-enabled': 'Cloud login isn’t switched on for this app yet.',
+  'email-in-use': 'That email already has an account.',
+  'bad-email': 'That doesn’t look like a valid email.',
+  'weak-password': 'Password must be at least 6 characters.',
+  'bad-login': 'Wrong email or password.',
+  'no-backup': 'No cloud backup found for that account.',
+  'offline': 'You need an internet connection for cloud login.',
 }
 
 export default function AuthScreen() {
   const {
     firstRun, pendingRecovery, mustReset, signup, login, recover, submitReset, confirmRecovery,
-    canBioUnlock, unlockBiometric,
+    canBioUnlock, unlockBiometric, cloudReady, cloudRestore,
   } = useAuth()
 
   // 'login' | 'recover' — signup/reset/recovery are driven by context flags.
@@ -105,6 +112,31 @@ export default function AuthScreen() {
         </button>
         {password && password.length < 6 && <p className="auth-hint">Password must be at least 6 characters.</p>}
         {confirm && password !== confirm && <p className="auth-hint">Passwords don’t match.</p>}
+        {cloudReady && (
+          <button className="auth-link" onClick={() => { setError(''); setMode('cloudRestore') }}>
+            Already set up on another device? Log in with email
+          </button>
+        )}
+      </AuthShell>
+    )
+  }
+
+  // ── Cloud restore (new / reset device) ─────────────────────
+  if (mode === 'cloudRestore') {
+    return (
+      <AuthShell title="Log in with email">
+        <p className="auth-note">Use this on a new or reset device to restore your boat from the cloud.
+        Needs an internet connection.</p>
+        <input className="auth-input" placeholder="Email" value={username}
+          onChange={e => setUsername(e.target.value)} autoCapitalize="none" inputMode="email" />
+        <input className="auth-input" type="password" placeholder="Password" value={password}
+          onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
+        {error && <p className="auth-error">{error}</p>}
+        <button className="auth-btn" disabled={busy || !username || !password}
+          onClick={() => run(() => cloudRestore(username, password))}>
+          {busy ? 'Restoring…' : 'Restore my boat'}
+        </button>
+        <button className="auth-link" onClick={() => { setError(''); setMode(firstRun ? 'signup' : 'login') }}>← Back</button>
       </AuthShell>
     )
   }
@@ -134,6 +166,11 @@ export default function AuthScreen() {
       <button className="auth-link" onClick={() => { setError(''); setCode(''); setMode('recover') }}>
         Forgot password?
       </button>
+      {cloudReady && (
+        <button className="auth-link" onClick={() => { setError(''); setMode('cloudRestore') }}>
+          New or reset device? Log in with email
+        </button>
+      )}
     </AuthShell>
   )
 }

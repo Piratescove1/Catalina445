@@ -108,6 +108,16 @@ export async function createFirstAccount({ username, password }) {
   return { dek, recoveryCode, account: publicAccount(account) }
 }
 
+// Create a local account from an already-known DEK (e.g. recovered from the
+// cloud). Establishes offline login on this device; data arrives via sync.
+export async function createAccountFromKey({ username, password, dek }) {
+  const account = await buildAccountRecord({ username, password, dek, role: 'admin' })
+  const recoveryCode = account._recoveryCode
+  delete account._recoveryCode
+  saveAccounts([account])
+  return { dek, recoveryCode, account: publicAccount(account) }
+}
+
 // Build a record wrapping the given DEK under a new password + recovery code.
 async function buildAccountRecord({ username, password, dek, role }) {
   const salt = newSaltB64()

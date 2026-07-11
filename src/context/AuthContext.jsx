@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import * as vault from '../lib/vault'
 import * as bio from '../lib/biometric'
 import * as linking from '../lib/linking'
+import * as cloud from '../lib/cloudAccount'
 import { encryptJSON, decryptJSON } from '../lib/crypto'
 
 const AuthCtx = createContext(null)
@@ -18,6 +19,7 @@ export function AuthProvider({ children }) {
   const [canBioUnlock, setCanBioUnlock] = useState(false)   // enrolled for the last user
   const [bioOn, setBioOn] = useState(false)                 // enabled for the current account
   const [lastUser, setLastUser] = useState(() => bio.getLastUser())
+  const [cloudEmail, setCloudEmail] = useState(() => localStorage.getItem('c445-cloud-email') || '')
   const dekRef = useRef(null)
 
   // On load, if accounts already exist we're locked: wipe any plaintext left in
@@ -164,6 +166,30 @@ export function AuthProvider({ children }) {
     return adoptSharedKey({ dek, boatId, password })
   }, [account, adoptSharedKey])
 
+  // ── Cloud login / recovery (Firebase Auth) ──
+  const enableCloud = useCallback(async (email, password) => {
+    if (!account || !dekRef.current) throw new Error('locked')
+    await vault.login({ username: account.username, password }) // verify device password
+    const boatId = localStorage.getItem('c445-boat-id') || ''
+    await cloud.enableCloudBackup({ email, password, dek: dekRef.current, boatId })
+    localStorage.setItem('c445-cloud-email', email.trim())
+    setCloudEmail(email.trim())
+  }, [account])
+
+  // Restore this (new/wiped) device from the cloud account.
+  const cloudRestore = useCallback(async (email, password) => {
+    const { dek, boatId, email: em } = await cloud.cloudRestore({ email, password })
+    if (boatId) localStorage.setItem('c445-boat-id', boatId)
+    await vault.createAccountFromKey({ username: em, password, dek })
+    dekRef.current = dek
+    setAccount(vault.getAccount(em))
+    rememberUser((em || '').toLowerCase())
+    localStorage.setItem('c445-cloud-email', em)
+    setCloudEmail(em)
+    setBioOn(false)
+    setStatus('unlocked')
+  }, [rememberUser])
+
   const logout = useCallback(() => {
     vault.clearLocalData()
     dekRef.current = null
@@ -179,6 +205,7 @@ export function AuthProvider({ children }) {
     unlockBiometric, enableBiometric, disableBiometric,
     encryptData, decryptData,
     createDeviceLink, linkThisDevice, startPairingLink, linkWithCode,
+    cloudReady: cloud.cloudReady(), cloudEmail, enableCloud, cloudRestore,
   }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

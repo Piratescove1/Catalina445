@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,9 +14,11 @@ const firebaseConfig = {
 export const configured = !!firebaseConfig.apiKey
 
 let db = null
+let auth = null
 if (configured) {
   const app = initializeApp(firebaseConfig)
   db = initializeFirestore(app, { localCache: persistentLocalCache() })
+  auth = getAuth(app)
 }
 
-export { db }
+export { db, auth }
