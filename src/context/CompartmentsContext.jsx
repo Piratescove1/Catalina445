@@ -1,50 +1,78 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from 'react'
-import { DEFAULT_COMPARTMENTS, newCompartmentId } from '../data/compartments'
+import {
+  DEFAULT_COMPARTMENTS, DEFAULT_AREAS, DEFAULT_AREA_ID, newCompartmentId, newAreaId,
+} from '../data/compartments'
 
-const KEY = 'c445-compartments'
+const COMP_KEY = 'c445-compartments'
+const AREA_KEY = 'c445-areas'
 const Ctx = createContext(null)
 export const useCompartments = () => useContext(Ctx)
 
-function load() {
+function loadAreas() {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(AREA_KEY)
     if (raw) {
       const arr = JSON.parse(raw)
       if (Array.isArray(arr) && arr.length) return arr
     }
   } catch { /* fall through */ }
-  return DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+  return DEFAULT_AREAS.map(a => ({ ...a }))
+}
+
+function loadCompartments(areas) {
+  let list
+  try {
+    const raw = localStorage.getItem(COMP_KEY)
+    const arr = raw ? JSON.parse(raw) : null
+    list = Array.isArray(arr) && arr.length ? arr : DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+  } catch {
+    list = DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+  }
+  // Ensure every compartment belongs to an existing area.
+  const areaIds = new Set(areas.map(a => a.id))
+  const fallback = areas[0]?.id || DEFAULT_AREA_ID
+  return list.map(c => ({ ...c, areaId: areaIds.has(c.areaId) ? c.areaId : fallback }))
 }
 
 const renumber = (list) => list.map((c, i) => ({ ...c, num: i + 1 }))
 
 export function CompartmentsProvider({ children }) {
-  const [compartments, setCompartments] = useState(load)
+  const [areas, setAreas] = useState(loadAreas)
+  const [compartments, setCompartments] = useState(() => loadCompartments(loadAreas()))
 
-  const update = useCallback((updater) => {
+  const saveComps = useCallback((updater) => {
     setCompartments(cur => {
       const raw = typeof updater === 'function' ? updater(cur) : updater
       const next = renumber(raw)
-      try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      try { localStorage.setItem(COMP_KEY, JSON.stringify(next)) } catch { /* ignore */ }
       return next
     })
   }, [])
 
-  const addCompartment = useCallback((name, icon = '📦') => {
-    update(cur => [...cur, { id: newCompartmentId(), name: (name || '').trim() || 'New compartment', icon }])
-  }, [update])
+  const saveAreas = useCallback((updater) => {
+    setAreas(cur => {
+      const next = typeof updater === 'function' ? updater(cur) : updater
+      try { localStorage.setItem(AREA_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
+
+  // ── compartments ──
+  const addCompartment = useCallback((name, icon = '📦', areaId = DEFAULT_AREA_ID) => {
+    saveComps(cur => [...cur, { id: newCompartmentId(), name: (name || '').trim() || 'New compartment', icon, areaId }])
+  }, [saveComps])
 
   const updateCompartment = useCallback((id, patch) => {
-    update(cur => cur.map(c => (c.id === id ? { ...c, ...patch } : c)))
-  }, [update])
+    saveComps(cur => cur.map(c => (c.id === id ? { ...c, ...patch } : c)))
+  }, [saveComps])
 
   const deleteCompartment = useCallback((id) => {
-    update(cur => cur.filter(c => c.id !== id))
-  }, [update])
+    saveComps(cur => cur.filter(c => c.id !== id))
+  }, [saveComps])
 
   const moveCompartment = useCallback((id, dir) => {
-    update(cur => {
+    saveComps(cur => {
       const i = cur.findIndex(c => c.id === id)
       const j = i + dir
       if (i < 0 || j < 0 || j >= cur.length) return cur
@@ -52,20 +80,58 @@ export function CompartmentsProvider({ children }) {
       ;[next[i], next[j]] = [next[j], next[i]]
       return next
     })
-  }, [update])
+  }, [saveComps])
+
+  const setCompartmentPosition = useCallback((id, px, py) => {
+    saveComps(cur => cur.map(c => (c.id === id ? { ...c, px, py } : c)))
+  }, [saveComps])
 
   const resetCompartments = useCallback(() => {
-    update(() => DEFAULT_COMPARTMENTS.map(c => ({ ...c })))
-  }, [update])
+    saveAreas(DEFAULT_AREAS.map(a => ({ ...a })))
+    saveComps(() => DEFAULT_COMPARTMENTS.map(c => ({ ...c })))
+  }, [saveComps, saveAreas])
 
-  // For a future sync path (remote list wins when present).
+  // ── areas ──
+  const addArea = useCallback((name) => {
+    const id = newAreaId()
+    saveAreas(cur => [...cur, { id, name: (name || '').trim() || 'New area', image: null }])
+    return id
+  }, [saveAreas])
+
+  const renameArea = useCallback((id, name) => {
+    saveAreas(cur => cur.map(a => (a.id === id ? { ...a, name } : a)))
+  }, [saveAreas])
+
+  const setAreaImage = useCallback((id, image) => {
+    saveAreas(cur => cur.map(a => (a.id === id ? { ...a, image } : a)))
+  }, [saveAreas])
+
+  const deleteArea = useCallback((id) => {
+    setAreas(curAreas => {
+      if (curAreas.length <= 1) return curAreas // keep at least one
+      const remaining = curAreas.filter(a => a.id !== id)
+      const fallback = remaining[0].id
+      // Reassign this area's compartments to the first remaining area.
+      saveComps(cur => cur.map(c => (c.areaId === id ? { ...c, areaId: fallback } : c)))
+      try { localStorage.setItem(AREA_KEY, JSON.stringify(remaining)) } catch { /* ignore */ }
+      return remaining
+    })
+  }, [saveComps])
+
+  // For a future sync path.
   const importCompartments = useCallback((list) => {
-    if (Array.isArray(list) && list.length) update(list)
-  }, [update])
+    if (Array.isArray(list) && list.length) saveComps(list)
+  }, [saveComps])
+  const importAreas = useCallback((list) => {
+    if (Array.isArray(list) && list.length) saveAreas(list)
+  }, [saveAreas])
 
   const value = {
-    compartments, addCompartment, updateCompartment, deleteCompartment,
-    moveCompartment, resetCompartments, importCompartments,
+    compartments, areas,
+    addCompartment, updateCompartment, deleteCompartment, moveCompartment,
+    setCompartmentPosition, resetCompartments,
+    addArea, renameArea, setAreaImage, deleteArea,
+    importCompartments, importAreas,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -39,3 +39,15 @@ export const COMPARTMENT_ICONS = ['📦', '⚓', '🛋️', '🧊', '🍳', '�
 export function newCompartmentId() {
   return 'comp-' + Math.random().toString(36).slice(2, 9)
 }
+
+// An "area" is a tab: a named group of compartments with an optional uploaded
+// diagram (image). The default area shows the built-in Catalina 445 plan.
+export const DEFAULT_AREA_ID = 'area-main'
+export const DEFAULT_AREAS = [
+  { id: DEFAULT_AREA_ID, name: 'Compartments', image: null, builtinImage: '/boat-plan.png' },
+]
+
+export function newAreaId() {
+  return 'area-' + Math.random().toString(36).slice(2, 9)
+}
+

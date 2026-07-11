@@ -791,6 +791,35 @@ html, body, #root {
 .manage-add { display: flex; gap: 8px; margin-top: 4px; }
 .manage-add-btn { width: auto; padding: 8px 16px; margin: 0; flex-shrink: 0; }
 .manage-confirm { display: flex; flex-direction: column; gap: 8px; }
+.manage-section-title {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--brass); font-weight: 700; margin: 4px 0;
+}
+.manage-area {
+  background: var(--navy-mid); border: 1px solid var(--navy-light);
+  border-radius: 6px; color: var(--cream); font-size: 0.8rem; padding: 5px; flex-shrink: 0; max-width: 40%;
+}
+.manage-upload {
+  background: var(--navy-mid); border: 1px solid var(--brass-dim); border-radius: 6px;
+  color: var(--cream); font-size: 0.78rem; font-weight: 600; padding: 6px 10px;
+  cursor: pointer; flex-shrink: 0; white-space: nowrap;
+}
+
+/* Area diagram (custom uploaded boat drawings) */
+.area-diagram-img {
+  display: block; width: 100%; height: auto; border-radius: 10px;
+  user-select: none; -webkit-user-select: none;
+}
+.area-empty {
+  background: var(--navy-mid); border: 1px dashed var(--navy-light); border-radius: 10px;
+  color: var(--cream-dim); font-size: 0.9rem; line-height: 1.5; padding: 20px; text-align: center;
+  margin-bottom: 10px;
+}
+.place-hint {
+  background: var(--brass); color: var(--navy); font-size: 0.82rem; font-weight: 600;
+  border-radius: 8px; padding: 8px 12px; margin: 0 0 8px; text-align: center;
+}
+.export-btn--on { background: #9ae6b4; }
 
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {

@@ -24,6 +24,7 @@ export const DATA_KEYS = [
   'c445-inventory',
   'c445-voyages',
   'c445-compartments',
+  'c445-areas',
   'c445-locker-inventory',
   'c445-provisions',
   'c445-prov-categories',
