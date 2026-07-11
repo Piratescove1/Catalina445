@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { COMPARTMENTS } from '../data/compartments'
+import { DEFAULT_COMPARTMENTS } from '../data/compartments'
 import { LOCKERS } from '../data/lockers'
 
 function fmt(isoStr) {
@@ -7,9 +7,9 @@ function fmt(isoStr) {
   try { return new Date(isoStr).toLocaleString() } catch { return isoStr }
 }
 
-function makeCompartmentsSheet(inventory) {
+function makeCompartmentsSheet(inventory, compartments) {
   const rows = [['Compartment', 'Item', 'Qty', 'Unit', 'Added']]
-  for (const comp of COMPARTMENTS) {
+  for (const comp of compartments) {
     const items = inventory[comp.id] || []
     if (items.length === 0) {
       rows.push([comp.name, '', '', '', ''])
@@ -111,10 +111,10 @@ function makeProvisionsSheet(provItems) {
   return XLSX.utils.aoa_to_sheet(rows)
 }
 
-export function exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName }) {
+export function exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName, compartments = DEFAULT_COMPARTMENTS }) {
   const wb = XLSX.utils.book_new()
 
-  XLSX.utils.book_append_sheet(wb, makeCompartmentsSheet(inventory),           'Compartments')
+  XLSX.utils.book_append_sheet(wb, makeCompartmentsSheet(inventory, compartments), 'Compartments')
   XLSX.utils.book_append_sheet(wb, makeLockersSheet(lockerInventory),          'Lockers & Drawers')
   XLSX.utils.book_append_sheet(wb, makeVoyageSheet(voyages),                   'Voyage Log')
   XLSX.utils.book_append_sheet(wb, makeMaintenanceSheet(maintenance),          'Maintenance Log')

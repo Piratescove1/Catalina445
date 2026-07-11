@@ -743,6 +743,55 @@ html, body, #root {
 .lic-plan-price { font-size: 0.8rem; color: var(--cream-dim); margin: 2px 0 0; }
 .lic-buy { width: auto; padding: 8px 16px; margin: 0; }
 
+/* ── Manage compartments ─────────────────────────────────── */
+.inv-manage-row { display: flex; justify-content: flex-end; margin: 6px 0 2px; }
+.manage-card { max-width: 520px; }
+.manage-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.manage-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--navy);
+  border: 1px solid var(--navy-light);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.manage-num { width: 22px; text-align: center; color: var(--cream-dim); font-size: 0.8rem; flex-shrink: 0; }
+.manage-icon {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream);
+  font-size: 1rem;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.manage-name {
+  flex: 1;
+  min-width: 0;
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream);
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+.manage-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.manage-mini {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-light);
+  border-radius: 6px;
+  color: var(--cream-dim);
+  width: 28px; height: 30px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.manage-mini:disabled { opacity: 0.35; }
+.manage-del { color: #ff8a80; border-color: var(--brass-dim); }
+.manage-add { display: flex; gap: 8px; margin-top: 4px; }
+.manage-add-btn { width: auto; padding: 8px 16px; margin: 0; flex-shrink: 0; }
+.manage-confirm { display: flex; flex-direction: column; gap: 8px; }
+
 /* ── Help / guide overlay ────────────────────────────────── */
 .help-overlay {
   position: fixed;

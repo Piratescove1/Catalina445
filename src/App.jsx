@@ -19,6 +19,7 @@ import HelpScreen from './components/HelpScreen'
 import LinkDevice from './components/LinkDevice'
 import LicenseScreen from './components/LicenseScreen'
 import { useLicense } from './hooks/useLicense'
+import { useCompartments } from './context/CompartmentsContext'
 import './index.css'
 
 const STATUS_LABEL = {
@@ -207,6 +208,7 @@ export default function App() {
   }, [persist, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
   const license = useLicense(boatId)
+  const { compartments, importCompartments } = useCompartments()
   const handleCheckout = (plan) => {
     // Phase 4b wires this to Stripe Checkout for the selected plan.
     alert(`Online payment for the ${plan.label} plan will be enabled once Stripe is connected.`)
@@ -217,7 +219,7 @@ export default function App() {
     const data = {
       _app: 'catalina445', _version: 1, exportedAt: new Date().toISOString(), boatId,
       inventory, voyages, maintenance, futureProjects, ditchSop: sop, ditchItems,
-      lockerInventory, provItems, provCategories, labels, prefs,
+      lockerInventory, provItems, provCategories, labels, prefs, compartments,
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -228,7 +230,7 @@ export default function App() {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-  }, [boatId, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
+  }, [boatId, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs, compartments])
 
   const restoreFromFile = useCallback((file) => {
     const reader = new FileReader()
@@ -236,13 +238,14 @@ export default function App() {
       try {
         const d = JSON.parse(reader.result)
         onRemoteData(d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop, d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs)
+        if (d.compartments) importCompartments(d.compartments)
         alert('Backup restored. Your data has been replaced with the contents of the file.')
       } catch {
         alert('That file is not a valid Catalina 445 backup.')
       }
     }
     reader.readAsText(file)
-  }, [onRemoteData])
+  }, [onRemoteData, importCompartments])
 
   // ── Cloud history (automatic snapshots) ────────────────────
   const openHistory = useCallback(async () => {
@@ -335,7 +338,7 @@ export default function App() {
 
           <button
             className="export-btn"
-            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName })}
+            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName, compartments })}
           >
             Download Excel Backup
           </button>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { COMPARTMENTS } from '../data/compartments'
+import { useCompartments } from '../context/CompartmentsContext'
 import { LOCKERS } from '../data/lockers'
 
 function AddItemRow({ allCategories, onAdd }) {
@@ -87,8 +87,9 @@ function ConfirmDialog({ title, body, confirmLabel, onConfirm, onCancel }) {
 }
 
 function StoreItemDialog({ itemName, onStore, onCancel, getLabel }) {
+  const { compartments } = useCompartments()
   const [qty,    setQty]    = useState(1)
-  const [destId, setDestId] = useState(COMPARTMENTS[0].id)
+  const [destId, setDestId] = useState(() => compartments[0]?.id || '')
 
   const handleStore = () => {
     const isLocker = destId.startsWith('lock-')
@@ -118,7 +119,7 @@ function StoreItemDialog({ itemName, onStore, onCancel, getLabel }) {
             onChange={e => setDestId(e.target.value)}
           >
             <optgroup label="── Compartments ──">
-              {COMPARTMENTS.map(c => (
+              {compartments.map(c => (
                 <option key={c.id} value={c.id}>
                   #{c.num} — {getLabel ? getLabel(c.id, c.name) : c.name}
                 </option>
@@ -146,6 +147,7 @@ function StoreItemDialog({ itemName, onStore, onCancel, getLabel }) {
 }
 
 export default function ProvisionsScreen({ items, categories, toggleItem, toggleGot, addItem, deleteItem, renameItem, moveItem, clearList, resetDefaults, storeInCompartment, storeInLocker, getLabel }) {
+  const { compartments } = useCompartments()
   const [showListOnly,  setShowListOnly]  = useState(false)
   const [editMode,      setEditMode]      = useState(false)
   const [confirmReset,  setConfirmReset]  = useState(false)
@@ -161,7 +163,7 @@ export default function ProvisionsScreen({ items, categories, toggleItem, toggle
     else          storeInCompartment(destId, name, qty)
     const dest = isLocker
       ? LOCKERS.find(l => l.id === destId)
-      : COMPARTMENTS.find(c => c.id === destId)
+      : compartments.find(c => c.id === destId)
     const destLabel = dest
       ? (isLocker ? `Locker #${dest.num}` : `Compartment #${dest.num}`)
       : destId

@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
-import { COMPARTMENTS } from '../data/compartments'
+import { useCompartments } from '../context/CompartmentsContext'
 import BoatDiagram from '../components/BoatDiagram'
 import CompartmentModal from '../components/CompartmentModal'
+import ManageCompartments from '../components/ManageCompartments'
 import LockerDiagram from '../components/LockerDiagram'
 import LockerModal from '../components/LockerModal'
 import VoiceButton from '../components/VoiceButton'
@@ -12,9 +13,11 @@ export default function InventoryScreen({
   lockerInventory, addLockerItem, removeLockerItem, setLockerItemQty, deleteLockerItem, renameLockerItem,
   getLabel, setLabel,
 }) {
+  const { compartments } = useCompartments()
   const [tab, setTab]         = useState('compartments')  // 'compartments' | 'lockers'
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState('')
+  const [manageOpen, setManageOpen] = useState(false)
 
   const flash = (msg) => { setFeedback(msg); setTimeout(() => setFeedback(''), 4000) }
 
@@ -32,19 +35,19 @@ export default function InventoryScreen({
         if (!results.length) { flash(`"${cmd.item}" not found in any compartment`); return }
         const { compartmentId, item } = results[0]
         removeItem(compartmentId, item.name, cmd.qty)
-        const comp = COMPARTMENTS.find(c => c.id === compartmentId)
+        const comp = compartments.find(c => c.id === compartmentId)
         flash(`✓ Removed ${cmd.qty} × ${item.name} from ${comp?.name}`)
         break
       }
       case 'add': {
         if (cmd.compartmentNum) {
-          const comp = COMPARTMENTS.find(c => c.num === cmd.compartmentNum)
+          const comp = compartments.find(c => c.num === cmd.compartmentNum)
           if (!comp) { flash(`Compartment ${cmd.compartmentNum} not found`); return }
           addItem(comp.id, cmd.item, cmd.qty)
           flash(`✓ Added ${cmd.qty} × ${cmd.item} to ${comp.name}`)
         } else if (selected && tab === 'compartments') {
           addItem(selected, cmd.item, cmd.qty)
-          const comp = COMPARTMENTS.find(c => c.id === selected)
+          const comp = compartments.find(c => c.id === selected)
           flash(`✓ Added ${cmd.qty} × ${cmd.item} to ${comp?.name}`)
         } else {
           flash(`Say which compartment — e.g. "add 3 flares to compartment 5"`)
@@ -56,7 +59,7 @@ export default function InventoryScreen({
         if (!results.length) { flash(`"${cmd.item}" not found anywhere`); return }
         const total = results.reduce((s, r) => s + r.item.qty, 0)
         const locs = results.map(r => {
-          const comp = COMPARTMENTS.find(c => c.id === r.compartmentId)
+          const comp = compartments.find(c => c.id === r.compartmentId)
           return `#${comp?.num}(${r.item.qty})`
         }).join(', ')
         flash(`${total} × ${results[0].item.name} — compartments ${locs}`)
@@ -65,7 +68,7 @@ export default function InventoryScreen({
       default:
         flash(`Not handled here: "${raw}"`)
     }
-  }, [selected, tab, findItem, addItem, removeItem])
+  }, [selected, tab, findItem, addItem, removeItem, compartments])
 
   const handleTabChange = (t) => { setTab(t); setSelected(null) }
 
@@ -107,6 +110,12 @@ export default function InventoryScreen({
         </button>
       </div>
 
+      {tab === 'compartments' && (
+        <div className="inv-manage-row">
+          <button className="export-btn" onClick={() => setManageOpen(true)}>Manage compartments</button>
+        </div>
+      )}
+
       <div className="screen-body">
         {tab === 'compartments' && (
           <BoatDiagram
@@ -141,6 +150,8 @@ export default function InventoryScreen({
           onSetLabel={setLabel}
         />
       )}
+
+      {manageOpen && <ManageCompartments inventory={inventory} onClose={() => setManageOpen(false)} />}
 
       {tab === 'lockers' && selected && (
         <LockerModal

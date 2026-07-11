@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { COMPARTMENTS } from '../data/compartments'
+import { useCompartments } from '../context/CompartmentsContext'
 import VoiceButton from './VoiceButton'
 
 export default function CompartmentModal({
@@ -7,10 +7,10 @@ export default function CompartmentModal({
   onAddItem, onRemoveItem, onSetQty, onDeleteItem, onRenameItem, onFindItem,
   label, onSetLabel,
 }) {
-  const compartment = COMPARTMENTS.find(c => c.id === compartmentId)
-  if (!compartment) return null
+  const { compartments } = useCompartments()
+  const compartment = compartments.find(c => c.id === compartmentId)
   const items = inventory[compartmentId] || []
-  const displayName = label || compartment.name
+  const displayName = label || compartment?.name || ''
 
   const [editMode,     setEditMode]     = useState(false)
   const [titleDraft,   setTitleDraft]   = useState(displayName)
@@ -69,7 +69,7 @@ export default function CompartmentModal({
         } else {
           const results = onFindItem(cmd.item)
           if (results.length) {
-            const comp = COMPARTMENTS.find(c => c.id === results[0].compartmentId)
+            const comp = compartments.find(c => c.id === results[0].compartmentId)
             flash(`Not here — found in ${comp?.name || results[0].compartmentId}`)
           } else {
             flash(`"${cmd.item}" not found in any compartment`)
@@ -94,7 +94,9 @@ export default function CompartmentModal({
       }
       default: flash(`Command not applicable here: "${raw}"`)
     }
-  }, [compartmentId, items, onAddItem, onRemoveItem, onFindItem])
+  }, [compartmentId, items, onAddItem, onRemoveItem, onFindItem, compartments])
+
+  if (!compartment) return null
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
