@@ -19,6 +19,7 @@ export default function InventoryScreen({
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState('')
   const [manageOpen, setManageOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const [placeMode, setPlaceMode] = useState(false)
   const [placingId, setPlacingId] = useState(null)
 
@@ -76,7 +77,7 @@ export default function InventoryScreen({
   }, [selected, isLockers, findItem, addItem, removeItem, compartments])
 
   const handleTabChange = (t) => {
-    setTab(t); setSelected(null); setPlaceMode(false); setPlacingId(null)
+    setTab(t); setSelected(null); setPlaceMode(false); setPlacingId(null); setEditMode(false)
   }
   const handleSelect = (id) => {
     if (placeMode) setPlacingId(id)
@@ -128,15 +129,22 @@ export default function InventoryScreen({
 
       {!isLockers && (
         <div className="inv-manage-row">
-          {canPlace && (
-            <button
-              className={`export-btn ${placeMode ? 'export-btn--on' : ''}`}
-              onClick={() => { setPlaceMode(p => !p); setPlacingId(null); setSelected(null) }}
-            >
-              {placeMode ? 'Done placing' : 'Place markers'}
-            </button>
+          {editMode ? (
+            <>
+              <button className="export-btn" onClick={() => setManageOpen(true)}>Manage compartments</button>
+              {canPlace && (
+                <button
+                  className={`export-btn ${placeMode ? 'export-btn--on' : ''}`}
+                  onClick={() => { setPlaceMode(p => !p); setPlacingId(null); setSelected(null) }}
+                >
+                  {placeMode ? 'Done placing' : 'Place markers'}
+                </button>
+              )}
+              <button className="sync-close" onClick={() => { setEditMode(false); setPlaceMode(false); setPlacingId(null) }}>Done</button>
+            </>
+          ) : (
+            <button className="export-btn" onClick={() => setEditMode(true)}>Edit</button>
           )}
-          <button className="export-btn" onClick={() => setManageOpen(true)}>Manage compartments</button>
         </div>
       )}
 
