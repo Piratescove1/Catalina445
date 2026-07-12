@@ -303,103 +303,127 @@ export default function App() {
       {showPrefs && (
         <div className="sync-panel sync-panel--scrollable">
           <p className="sync-panel-title">Settings</p>
-          <div className="account-row">
-            <span className="account-who">Boat: <strong>{activeBoat?.name || '—'}</strong></span>
-            <button className="export-btn" onClick={() => { setShowPrefs(false); setShowBoats(true) }}>Switch / manage</button>
+
+          <div className="settings-section">
+            <p className="settings-section-title">Boat</p>
+            <div className="settings-row">
+              <span className="settings-label">Current boat<small>{activeBoat?.name || '—'}</small></span>
+              <button className="settings-btn" onClick={() => { setShowPrefs(false); setShowBoats(true) }}>Switch / manage</button>
+            </div>
+            <div className="settings-row">
+              <span className="settings-label">Boat name</span>
+              <input className="settings-input" value={prefs.boatName}
+                onChange={e => setPref('boatName', e.target.value)} placeholder="e.g. Catalina 445" />
+            </div>
           </div>
+
           {account && (
-            <div className="account-row">
-              <span className="account-who">Signed in as <strong>{account.displayName || account.username}</strong></span>
-              <button className="sync-close" onClick={logout}>Log out</button>
+            <div className="settings-section">
+              <p className="settings-section-title">Account &amp; security</p>
+              <div className="settings-row">
+                <span className="settings-label">Signed in<small>{account.displayName || account.username}</small></span>
+                <button className="settings-btn settings-btn--danger" onClick={logout}>Log out</button>
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Cloud login<small>{cloudEmail || 'off'}</small></span>
+                <button className="settings-btn" onClick={() => { setShowPrefs(false); setShowCloud(true) }}>
+                  {cloudEmail ? 'Manage' : 'Enable'}
+                </button>
+              </div>
+              {bioAvailable && (
+                <div className="settings-row">
+                  <span className="settings-label">Face ID / fingerprint</span>
+                  {bioOn
+                    ? <button className="settings-btn settings-btn--danger" onClick={disableBiometric}>Turn off</button>
+                    : <button className="settings-btn" onClick={handleEnableBiometric}>Turn on</button>}
+                </div>
+              )}
             </div>
           )}
-          <div className="account-row">
-            <span className="account-who">
-              Subscription: {license.status === 'active'
-                ? `active (${license.daysLeft}d left)`
+
+          <div className="settings-section">
+            <p className="settings-section-title">Subscription</p>
+            <div className="settings-row">
+              <span className="settings-label">Status<small>{license.status === 'active'
+                ? `active — ${license.daysLeft}d left`
                 : license.status === 'trial'
-                  ? `trial (${license.daysLeft}d left)`
-                  : 'expired'}
-            </span>
-            <button className="export-btn" onClick={() => { setShowPrefs(false); setShowLicense(true) }}>Manage</button>
+                  ? `trial — ${license.daysLeft}d left`
+                  : 'expired'}</small></span>
+              <button className="settings-btn" onClick={() => { setShowPrefs(false); setShowLicense(true) }}>Manage</button>
+            </div>
           </div>
-          {account && (
-            <div className="account-row">
-              <span className="account-who">Cloud login {cloudEmail ? `— ${cloudEmail}` : '(off)'}</span>
-              <button className="export-btn" onClick={() => { setShowPrefs(false); setShowCloud(true) }}>
-                {cloudEmail ? 'Manage' : 'Enable'}
-              </button>
-            </div>
-          )}
-          {account && bioAvailable && (
-            <div className="account-row">
-              <span className="account-who">Face ID / fingerprint unlock</span>
-              {bioOn
-                ? <button className="sync-close" onClick={disableBiometric}>Turn off</button>
-                : <button className="export-btn" onClick={handleEnableBiometric}>Turn on</button>}
-            </div>
-          )}
-          <div className="prefs-row">
-            <label className="prefs-label">Boat Name</label>
-            <input
-              className="add-input add-input--name"
-              value={prefs.boatName}
-              onChange={e => setPref('boatName', e.target.value)}
-              placeholder="e.g. Catalina 445"
+
+          <div className="settings-section">
+            <p className="settings-section-title">Provisions</p>
+            <ProvCategoryManager
+              categories={provCategories}
+              onAdd={addProvCat}
+              onDelete={deleteProvCat}
+              onRename={renameProvCat}
+              onMove={moveProvCat}
             />
           </div>
 
-          <ProvCategoryManager
-            categories={provCategories}
-            onAdd={addProvCat}
-            onDelete={deleteProvCat}
-            onRename={renameProvCat}
-            onMove={moveProvCat}
-          />
+          {account && (
+            <div className="settings-section">
+              <p className="settings-section-title">Share &amp; devices</p>
+              <div className="settings-row">
+                <span className="settings-label">Share this boat with another device</span>
+                <button className="settings-btn" onClick={() => { setShowPrefs(false); setLinkMode('share') }}>Link…</button>
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Link this device to a boat</span>
+                <button className="settings-btn" onClick={() => { setShowPrefs(false); setLinkMode('receive') }}>Receive…</button>
+              </div>
+            </div>
+          )}
 
-          <button
-            className="export-btn"
-            onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName, compartments })}
-          >
-            Download Excel Backup
-          </button>
-          <button className="export-btn" onClick={downloadBackup}>
-            Download Full Backup (JSON)
-          </button>
-          <button className="export-btn" onClick={() => fileInputRef.current?.click()}>
-            Restore from Backup File…
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            style={{ display: 'none' }}
-            onChange={e => {
-              const f = e.target.files?.[0]
-              if (f && window.confirm('Restore from this backup file? This replaces your current data on all synced devices.')) {
-                restoreFromFile(f)
-              }
-              e.target.value = ''
-            }}
-          />
-          <button className="export-btn" onClick={openHistory} disabled={!license.premiumActive}>
-            {license.premiumActive ? 'Cloud Backups…' : 'Cloud Backups (renew to use)'}
-          </button>
-          {account && (
-            <div className="account-row">
-              <span className="account-who">Share boat with another device</span>
-              <button className="export-btn" onClick={() => { setShowPrefs(false); setLinkMode('share') }}>Link…</button>
+          <div className="settings-section">
+            <p className="settings-section-title">Backup &amp; data</p>
+            <div className="settings-row">
+              <span className="settings-label">Full backup (JSON)</span>
+              <button className="settings-btn" onClick={downloadBackup}>Download</button>
             </div>
-          )}
-          {account && (
-            <div className="account-row">
-              <span className="account-who">Link this device to a boat</span>
-              <button className="export-btn" onClick={() => { setShowPrefs(false); setLinkMode('receive') }}>Receive…</button>
+            <div className="settings-row">
+              <span className="settings-label">Excel backup</span>
+              <button className="settings-btn"
+                onClick={() => exportToExcel({ inventory, lockerInventory, voyages, maintenance, futureProjects, sop, ditchItems, provItems, boatName: prefs.boatName, compartments })}>
+                Download
+              </button>
             </div>
-          )}
-          <button className="export-btn" onClick={() => { setShowPrefs(false); setShowHelp(true) }}>
-            Help &amp; Guide
-          </button>
+            <div className="settings-row">
+              <span className="settings-label">Restore from a backup file</span>
+              <button className="settings-btn" onClick={() => fileInputRef.current?.click()}>Restore…</button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f && window.confirm('Restore from this backup file? This replaces your current data on all synced devices.')) {
+                  restoreFromFile(f)
+                }
+                e.target.value = ''
+              }}
+            />
+            <div className="settings-row">
+              <span className="settings-label">Cloud backups</span>
+              <button className="settings-btn" onClick={openHistory} disabled={!license.premiumActive}>
+                {license.premiumActive ? 'Open' : 'Renew to use'}
+              </button>
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <p className="settings-section-title">Help</p>
+            <div className="settings-row">
+              <span className="settings-label">Help &amp; guide</span>
+              <button className="settings-btn" onClick={() => { setShowPrefs(false); setShowHelp(true) }}>Open</button>
+            </div>
+          </div>
+
           <button className="sync-close" onClick={() => setShowPrefs(false)}>Done</button>
         </div>
       )}
