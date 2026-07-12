@@ -21,15 +21,17 @@ export default function ManageBoats({ onClose }) {
 
         <div className="manage-list">
           {boats.map(b => (
-            <div key={b.id} className={`manage-row ${b.id === activeBoatId ? 'manage-row--active' : ''}`}>
-              <input className="manage-name" value={b.name} onChange={e => renameBoat(b.id, e.target.value)} />
-              {b.id === activeBoatId
-                ? <span className="boat-active-tag">Active</span>
-                : <button className="export-btn" onClick={() => switchBoat(b.id)}>Switch</button>}
-              {boats.length > 1 && (
-                <button className="manage-mini manage-del" title={`Delete ${b.name}`}
-                  onClick={() => setConfirmId(b.id)}>🗑</button>
-              )}
+            <div key={b.id} className={`boat-card ${b.id === activeBoatId ? 'boat-card--active' : ''}`}>
+              <input className="boat-name-input" value={b.name} placeholder="Boat name"
+                onChange={e => renameBoat(b.id, e.target.value)} />
+              <div className="boat-card-actions">
+                {b.id === activeBoatId
+                  ? <span className="boat-active-tag">Active boat</span>
+                  : <button className="export-btn" onClick={() => switchBoat(b.id)}>Switch to this boat</button>}
+                {boats.length > 1 && (
+                  <button className="manage-mini manage-del boat-del" onClick={() => setConfirmId(b.id)}>🗑 Delete</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -49,8 +51,8 @@ export default function ManageBoats({ onClose }) {
           <div className="dialog">
             <p className="dialog-title">Delete this boat?</p>
             <p className="dialog-body">
-              Permanently delete <strong>“{confirmBoat.name}”</strong> and all of its data — drawings, inventory,
-              lockers, maintenance, ditch bag and voyages — from this device. This can’t be undone.
+              Permanently delete <strong>“{confirmBoat.name || 'this boat'}”</strong> and all of its data — drawings,
+              inventory, lockers, maintenance, ditch bag and voyages — from this device. This can’t be undone.
               {confirmBoat.id === activeBoatId && ' You’ll be switched to another boat.'}
             </p>
             <p className="dialog-body dialog-body--dim">Your shared provisioning list is not affected.</p>
