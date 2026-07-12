@@ -1,6 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from 'react'
 import { PER_BOAT_KEYS, newBoatId } from '../data/boats'
+import { newAreaId } from '../data/compartments'
+
+// A fresh boat starts blank: one empty area (no drawing) and no compartments,
+// so it prompts the user to upload its own drawing rather than showing the
+// built-in Catalina plan.
+function blankBoatSeed() {
+  return {
+    'c445-areas': JSON.stringify([{ id: newAreaId(), name: 'Compartments', image: null }]),
+    'c445-compartments': JSON.stringify([]),
+  }
+}
 
 const BOATS_KEY = 'c445-boats'      // [{ id, name }]
 const ACTIVE_KEY = 'c445-boat-id'   // active boat id
@@ -45,11 +56,12 @@ export function BoatsProvider({ children }) {
     try { localStorage.setItem(BOATS_KEY, JSON.stringify(list)) } catch { /* ignore */ }
   }, [])
 
-  // Park the active boat's data and load another boat's (or a fresh empty set).
-  const parkAndLoad = useCallback((toId, fresh) => {
+  // Park the active boat's data and load `loadData` (or the target boat's parked
+  // data when loadData is omitted).
+  const parkAndLoad = useCallback((toId, loadData) => {
     const park = loadJSON(PARK_KEY, {})
-    park[activeBoatId] = readFlat()          // save current
-    writeFlat(fresh ? {} : (park[toId] || {})) // load target
+    park[activeBoatId] = readFlat()                         // save current
+    writeFlat(loadData !== undefined ? loadData : (park[toId] || {}))
     delete park[toId]
     try { localStorage.setItem(PARK_KEY, JSON.stringify(park)) } catch { /* ignore */ }
     localStorage.setItem(ACTIVE_KEY, toId)
@@ -57,13 +69,13 @@ export function BoatsProvider({ children }) {
   }, [activeBoatId])
 
   const switchBoat = useCallback((id) => {
-    if (id && id !== activeBoatId) parkAndLoad(id, false)
+    if (id && id !== activeBoatId) parkAndLoad(id)
   }, [activeBoatId, parkAndLoad])
 
   const addBoat = useCallback((name) => {
     const id = newBoatId()
     saveBoats([...boats, { id, name: (name || '').trim() || 'New boat' }])
-    parkAndLoad(id, true) // start the new boat with empty per-boat data
+    parkAndLoad(id, blankBoatSeed()) // start the new boat blank
     return id
   }, [boats, saveBoats, parkAndLoad])
 

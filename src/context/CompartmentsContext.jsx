@@ -12,9 +12,13 @@ export const useCompartments = () => useContext(Ctx)
 function loadAreas() {
   try {
     const raw = localStorage.getItem(AREA_KEY)
-    if (raw) {
+    if (raw !== null) {
+      // A boat that's been set up (even to an empty/custom set) uses its own
+      // areas. Only fall back to the Catalina template when never set up.
       const arr = JSON.parse(raw)
       if (Array.isArray(arr) && arr.length) return arr
+    } else {
+      return DEFAULT_AREAS.map(a => ({ ...a }))
     }
   } catch { /* fall through */ }
   return DEFAULT_AREAS.map(a => ({ ...a }))
@@ -24,8 +28,12 @@ function loadCompartments(areas) {
   let list
   try {
     const raw = localStorage.getItem(COMP_KEY)
-    const arr = raw ? JSON.parse(raw) : null
-    list = Array.isArray(arr) && arr.length ? arr : DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+    if (raw !== null) {
+      const arr = JSON.parse(raw)
+      list = Array.isArray(arr) ? arr : DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+    } else {
+      list = DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
+    }
   } catch {
     list = DEFAULT_COMPARTMENTS.map(c => ({ ...c }))
   }
