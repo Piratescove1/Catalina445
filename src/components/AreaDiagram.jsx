@@ -26,8 +26,8 @@ export default function AreaDiagram({
       {placeMode && (
         <p className="place-hint">
           {placingId
-            ? 'Now tap the drawing to move this compartment.'
-            : 'Tap the drawing to drop a new storage spot (you’ll name it). To move an existing one, tap it in the list first.'}
+            ? 'Now tap where this marker should go.'
+            : 'Tap a marker to move it, or tap an empty spot to add a new storage location.'}
         </p>
       )}
 
@@ -41,7 +41,7 @@ export default function AreaDiagram({
             <img src={src} alt={area.name} className="area-diagram-img" draggable={false} />
             {comps.map(c => {
               if (c.px == null || c.py == null) return null
-              const isSel = selected === c.id
+              const isSel = (placeMode ? placingId : selected) === c.id
               const count = itemCount(inventory, c.id)
               const has = count > 0
               return (
@@ -49,7 +49,7 @@ export default function AreaDiagram({
                   key={c.id}
                   className={`circle-btn ${isSel ? 'circle-btn--active' : ''} ${has ? 'circle-btn--stocked' : ''}`}
                   style={{ left: `${c.px}%`, top: `${c.py}%` }}
-                  onClick={(e) => { e.stopPropagation(); if (!placeMode) onSelect(c.id) }}
+                  onClick={(e) => { e.stopPropagation(); onSelect(c.id) }}
                   aria-label={`Compartment ${c.num}`}
                 >
                   <span className="circle-num">{c.num}</span>

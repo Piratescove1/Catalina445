@@ -148,7 +148,7 @@ export default function InventoryScreen({
             getLabel={getLabel}
             placeMode={placeMode}
             placingId={placingId}
-            onPlace={setCompartmentPosition}
+            onPlace={(id, px, py) => { setCompartmentPosition(id, px, py); setPlacingId(null) }}
             onAddAt={(px, py) => {
               const name = window.prompt('Name this storage spot (e.g. Galley locker)')
               if (name === null) return
