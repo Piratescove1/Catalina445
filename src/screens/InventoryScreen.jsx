@@ -107,7 +107,8 @@ export default function InventoryScreen({
       {feedback && <div className="global-feedback">{feedback}</div>}
 
       {/* Tabs: one per area, plus lockers */}
-      <div className="inv-tabs">
+      <div className="inv-tabbar">
+        <div className="inv-tabs">
         {areas.map(a => (
           <button
             key={a.id}
@@ -125,25 +126,30 @@ export default function InventoryScreen({
             Lockers &amp; Drawers
           </button>
         )}
+        </div>
+        {!isLockers && (
+          <button
+            className="inv-edit-toggle"
+            onClick={() => {
+              if (editMode) { setEditMode(false); setPlaceMode(false); setPlacingId(null) }
+              else setEditMode(true)
+            }}
+          >
+            {editMode ? 'Done' : 'Edit'}
+          </button>
+        )}
       </div>
 
-      {!isLockers && (
-        <div className="inv-manage-row">
-          {editMode ? (
-            <>
-              <button className="export-btn" onClick={() => setManageOpen(true)}>Manage compartments</button>
-              {canPlace && (
-                <button
-                  className={`export-btn ${placeMode ? 'export-btn--on' : ''}`}
-                  onClick={() => { setPlaceMode(p => !p); setPlacingId(null); setSelected(null) }}
-                >
-                  {placeMode ? 'Done placing' : 'Place markers'}
-                </button>
-              )}
-              <button className="sync-close" onClick={() => { setEditMode(false); setPlaceMode(false); setPlacingId(null) }}>Done</button>
-            </>
-          ) : (
-            <button className="export-btn" onClick={() => setEditMode(true)}>Edit</button>
+      {!isLockers && editMode && (
+        <div className="inv-manage-row inv-manage-row--tools">
+          <button className="export-btn" onClick={() => setManageOpen(true)}>Manage compartments</button>
+          {canPlace && (
+            <button
+              className={`export-btn ${placeMode ? 'export-btn--on' : ''}`}
+              onClick={() => { setPlaceMode(p => !p); setPlacingId(null); setSelected(null) }}
+            >
+              {placeMode ? 'Done placing' : 'Place markers'}
+            </button>
           )}
         </div>
       )}

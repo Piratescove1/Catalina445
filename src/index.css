@@ -745,6 +745,37 @@ html, body, #root {
 
 /* ── Manage compartments ─────────────────────────────────── */
 .inv-manage-row { display: flex; justify-content: flex-end; margin: 6px 0 2px; }
+.inv-manage-row--tools { justify-content: flex-start; gap: 8px; }
+.inv-tabbar {
+  display: flex;
+  align-items: stretch;
+  background: var(--navy-mid);
+  border-bottom: 1px solid var(--navy-light);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.inv-tabbar .inv-tabs {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  border-bottom: none;
+  position: static;
+  background: transparent;
+  z-index: auto;
+}
+.inv-edit-toggle {
+  flex-shrink: 0;
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--brass);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
 .manage-card { max-width: 520px; }
 .manage-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
 .manage-row {
