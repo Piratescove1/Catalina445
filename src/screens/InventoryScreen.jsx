@@ -13,7 +13,7 @@ export default function InventoryScreen({
   lockerInventory, addLockerItem, setLockerItemQty, deleteLockerItem, renameLockerItem,
   getLabel, setLabel,
 }) {
-  const { compartments, areas, setCompartmentPosition } = useCompartments()
+  const { compartments, areas, setCompartmentPosition, addCompartmentAt } = useCompartments()
   const [tab, setTab] = useState(() => areas[0]?.id || 'lockers')
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState('')
@@ -149,6 +149,11 @@ export default function InventoryScreen({
             placeMode={placeMode}
             placingId={placingId}
             onPlace={setCompartmentPosition}
+            onAddAt={(px, py) => {
+              const name = window.prompt('Name this storage spot (e.g. Galley locker)')
+              if (name === null) return
+              addCompartmentAt(name, activeArea.id, px, py)
+            }}
           />
         )}
         {isLockers && (

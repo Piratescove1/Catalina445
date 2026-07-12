@@ -7,23 +7,28 @@ function itemCount(inventory, id) {
 // position of the currently selected (placingId) compartment.
 export default function AreaDiagram({
   area, compartments, inventory, onSelect, selected, getLabel,
-  placeMode = false, placingId = null, onPlace,
+  placeMode = false, placingId = null, onPlace, onAddAt,
 }) {
   const src = area.image || area.builtinImage || null
   const comps = compartments.filter(c => c.areaId === area.id)
 
   const handleImageClick = (e) => {
-    if (!placeMode || !placingId || !onPlace) return
+    if (!placeMode) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const px = Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 10
-    const py = Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 10
-    onPlace(placingId, Math.max(0, Math.min(100, px)), Math.max(0, Math.min(100, py)))
+    const px = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 10))
+    const py = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 10))
+    if (placingId && onPlace) onPlace(placingId, px, py)      // move the selected one
+    else if (onAddAt) onAddAt(px, py)                          // otherwise drop a new spot here
   }
 
   return (
     <div className="diagram-wrap">
       {placeMode && (
-        <p className="place-hint">Tap a compartment in the list to select it, then tap its spot on the drawing.</p>
+        <p className="place-hint">
+          {placingId
+            ? 'Now tap the drawing to move this compartment.'
+            : 'Tap the drawing to drop a new storage spot (you’ll name it). To move an existing one, tap it in the list first.'}
+        </p>
       )}
 
       {src ? (

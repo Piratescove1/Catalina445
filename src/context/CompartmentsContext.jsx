@@ -94,6 +94,11 @@ export function CompartmentsProvider({ children }) {
     saveComps(cur => cur.map(c => (c.id === id ? { ...c, px, py } : c)))
   }, [saveComps])
 
+  // Create a compartment already positioned on the drawing (tap-to-add).
+  const addCompartmentAt = useCallback((name, areaId, px, py, icon = '📦') => {
+    saveComps(cur => [...cur, { id: newCompartmentId(), name: (name || '').trim() || 'New spot', icon, areaId, px, py }])
+  }, [saveComps])
+
   const resetCompartments = useCallback(() => {
     saveAreas(DEFAULT_AREAS.map(a => ({ ...a })))
     saveComps(() => DEFAULT_COMPARTMENTS.map(c => ({ ...c })))
@@ -137,7 +142,7 @@ export function CompartmentsProvider({ children }) {
   const value = {
     compartments, areas,
     addCompartment, updateCompartment, deleteCompartment, moveCompartment,
-    setCompartmentPosition, resetCompartments,
+    setCompartmentPosition, addCompartmentAt, resetCompartments,
     addArea, renameArea, setAreaImage, deleteArea,
     importCompartments, importAreas,
   }
