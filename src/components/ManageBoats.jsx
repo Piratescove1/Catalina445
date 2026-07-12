@@ -4,6 +4,9 @@ import { useBoats } from '../context/BoatsContext'
 export default function ManageBoats({ onClose }) {
   const { boats, activeBoatId, switchBoat, addBoat, renameBoat, deleteBoat } = useBoats()
   const [newName, setNewName] = useState('')
+  const [confirmId, setConfirmId] = useState(null)
+
+  const confirmBoat = boats.find(b => b.id === confirmId)
 
   return (
     <div className="help-overlay">
@@ -23,9 +26,9 @@ export default function ManageBoats({ onClose }) {
               {b.id === activeBoatId
                 ? <span className="boat-active-tag">Active</span>
                 : <button className="export-btn" onClick={() => switchBoat(b.id)}>Switch</button>}
-              {boats.length > 1 && b.id !== activeBoatId && (
-                <button className="manage-mini manage-del"
-                  onClick={() => { if (window.confirm(`Remove "${b.name}" and its data from this device?`)) deleteBoat(b.id) }}>✕</button>
+              {boats.length > 1 && (
+                <button className="manage-mini manage-del" title={`Delete ${b.name}`}
+                  onClick={() => setConfirmId(b.id)}>🗑</button>
               )}
             </div>
           ))}
@@ -40,6 +43,27 @@ export default function ManageBoats({ onClose }) {
 
         <button className="sync-close" onClick={onClose}>Done</button>
       </div>
+
+      {confirmBoat && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <p className="dialog-title">Delete this boat?</p>
+            <p className="dialog-body">
+              Permanently delete <strong>“{confirmBoat.name}”</strong> and all of its data — drawings, inventory,
+              lockers, maintenance, ditch bag and voyages — from this device. This can’t be undone.
+              {confirmBoat.id === activeBoatId && ' You’ll be switched to another boat.'}
+            </p>
+            <p className="dialog-body dialog-body--dim">Your shared provisioning list is not affected.</p>
+            <div className="dialog-btns">
+              <button className="dialog-btn dialog-btn--danger"
+                onClick={() => { const id = confirmId; setConfirmId(null); deleteBoat(id) }}>
+                Yes, delete boat
+              </button>
+              <button className="dialog-btn" onClick={() => setConfirmId(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
