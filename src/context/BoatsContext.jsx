@@ -74,7 +74,9 @@ export function BoatsProvider({ children }) {
 
   const addBoat = useCallback((name) => {
     const id = newBoatId()
-    saveBoats([...boats, { id, name: (name || '').trim() || 'New boat' }])
+    // lockers:false — new/custom boats don't get the Catalina-specific
+    // "Lockers & Drawers" tab; they use their own areas instead.
+    saveBoats([...boats, { id, name: (name || '').trim() || 'New boat', lockers: false }])
     parkAndLoad(id, blankBoatSeed()) // start the new boat blank
     return id
   }, [boats, saveBoats, parkAndLoad])

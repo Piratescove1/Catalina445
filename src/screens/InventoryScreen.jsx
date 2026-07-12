@@ -9,6 +9,7 @@ import VoiceButton from '../components/VoiceButton'
 
 export default function InventoryScreen({
   boatName,
+  showLockers = true,
   inventory, addItem, removeItem, setItemQty, deleteItem, renameItem, findItem,
   lockerInventory, addLockerItem, setLockerItemQty, deleteLockerItem, renameLockerItem,
   getLabel, setLabel,
@@ -115,12 +116,14 @@ export default function InventoryScreen({
             {a.name}
           </button>
         ))}
-        <button
-          className={`inv-tab ${isLockers ? 'inv-tab--active' : ''}`}
-          onClick={() => handleTabChange('lockers')}
-        >
-          Lockers &amp; Drawers
-        </button>
+        {showLockers && (
+          <button
+            className={`inv-tab ${isLockers ? 'inv-tab--active' : ''}`}
+            onClick={() => handleTabChange('lockers')}
+          >
+            Lockers &amp; Drawers
+          </button>
+        )}
       </div>
 
       {!isLockers && (

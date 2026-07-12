@@ -434,6 +434,7 @@ export default function App() {
       {screen === 'inventory' && (
         <InventoryScreen
           boatName={activeBoat?.name || prefs.boatName}
+          showLockers={activeBoat?.lockers !== false}
           inventory={inventory}
           addItem={addItem}
           removeItem={removeItem}
