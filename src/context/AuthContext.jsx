@@ -215,6 +215,7 @@ export function AuthProvider({ children }) {
     encryptData, decryptData,
     createDeviceLink, linkThisDevice, startPairingLink, linkWithCode,
     cloudReady: cloud.cloudReady(), cloudEmail, enableCloud, cloudRestore,
+    sendPasswordReset: cloud.sendPasswordReset,
   }
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

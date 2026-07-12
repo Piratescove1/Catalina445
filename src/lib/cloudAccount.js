@@ -15,10 +15,11 @@
  */
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db, configured } from './firebase.js'
-import { deriveKEK, newSaltB64, wrapDEK, unwrapDEK } from './crypto.js'
+import { deriveKEK, unwrapDEK, exportKeyB64, importKeyB64 } from './crypto.js'
 
 export function cloudReady() {
   return !!(configured && auth && db)
@@ -35,6 +36,15 @@ function mapError(e) {
   return e
 }
 
+export async function sendPasswordReset(email) {
+  if (!cloudReady()) throw new Error('offline')
+  try {
+    await sendPasswordResetEmail(auth, (email || '').trim())
+  } catch (e) {
+    throw mapError(e)
+  }
+}
+
 // Enable cloud backup for the current boat: create the Firebase account and
 // escrow the DEK wrapped by the password. Requires connectivity.
 export async function enableCloudBackup({ email, password, dek, boatId }) {
@@ -46,14 +56,10 @@ export async function enableCloudBackup({ email, password, dek, boatId }) {
     throw mapError(e)
   }
   const uid = cred.user.uid
-  const salt = newSaltB64()
-  const kek = await deriveKEK(password, salt)
-  const wrappedDEK = await wrapDEK(dek, kek)
   await setDoc(doc(db, 'users', uid), {
     email: email.trim().toLowerCase(),
     boatId: boatId || '',
-    salt,
-    wrappedDEK,
+    dek: await exportKeyB64(dek), // recoverable after any successful login (convenience model)
     updatedAt: Date.now(),
   })
   return { uid }
@@ -68,13 +74,30 @@ export async function cloudRestore({ email, password }) {
   } catch (e) {
     throw mapError(e)
   }
-  const snap = await getDoc(doc(db, 'users', cred.user.uid))
+  const uid = cred.user.uid
+  const snap = await getDoc(doc(db, 'users', uid))
   if (!snap.exists()) throw new Error('no-backup')
   const data = snap.data()
   let dek
   try {
-    const kek = await deriveKEK(password, data.salt)
-    dek = await unwrapDEK(data.wrappedDEK, kek)
+    if (data.dek) {
+      dek = await importKeyB64(data.dek)
+    } else if (data.wrappedDEK && data.salt) {
+      // Legacy escrow (password-wrapped). Unwrap, then upgrade to the
+      // recoverable form so future password resets restore data too.
+      const kek = await deriveKEK(password, data.salt)
+      dek = await unwrapDEK(data.wrappedDEK, kek)
+      try {
+        await setDoc(doc(db, 'users', uid), {
+          email: (data.email || email).trim().toLowerCase(),
+          boatId: data.boatId || '',
+          dek: await exportKeyB64(dek),
+          updatedAt: Date.now(),
+        })
+      } catch { /* best effort */ }
+    } else {
+      throw new Error('no-key')
+    }
   } catch {
     throw new Error('bad-login')
   }

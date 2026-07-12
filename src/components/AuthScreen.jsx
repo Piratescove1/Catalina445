@@ -22,8 +22,9 @@ const isEmail = (s) => /.+@.+\..+/.test((s || '').trim())
 export default function AuthScreen() {
   const {
     firstRun, pendingRecovery, mustReset, signup, login, recover, submitReset, confirmRecovery,
-    canBioUnlock, unlockBiometric, cloudReady, cloudRestore,
+    canBioUnlock, unlockBiometric, cloudReady, cloudRestore, sendPasswordReset,
   } = useAuth()
+  const [sent, setSent] = useState(false)
 
   // 'login' | 'recover' — signup/reset/recovery are driven by context flags.
   const [mode, setMode] = useState(firstRun ? 'signup' : 'login')
@@ -125,6 +126,36 @@ export default function AuthScreen() {
     )
   }
 
+  // ── Forgot password (email reset link) ─────────────────────
+  if (mode === 'forgotPassword') {
+    return (
+      <AuthShell title="Reset your password">
+        {sent ? (
+          <>
+            <p className="auth-note">✅ If an account exists for <strong>{username}</strong>, a reset link is on its
+            way. Open the email, set a new password, then come back and <strong>Log in with email.</strong></p>
+            <button className="auth-btn" onClick={() => { setSent(false); setError(''); setMode('cloudRestore') }}>
+              Back to log in
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="auth-note">Enter your account email and we’ll send a link to set a new password. (Needs
+            internet.)</p>
+            <input className="auth-input" type="email" placeholder="Email" value={username}
+              onChange={e => setUsername(e.target.value)} autoCapitalize="none" inputMode="email" />
+            {error && <p className="auth-error">{error}</p>}
+            <button className="auth-btn" disabled={busy || !isEmail(username)}
+              onClick={() => run(async () => { await sendPasswordReset(username); setSent(true) })}>
+              {busy ? 'Sending…' : 'Send reset link'}
+            </button>
+            <button className="auth-link" onClick={() => { setError(''); setMode('cloudRestore') }}>← Back</button>
+          </>
+        )}
+      </AuthShell>
+    )
+  }
+
   // ── Cloud restore (new / reset device) ─────────────────────
   if (mode === 'cloudRestore') {
     return (
@@ -139,6 +170,9 @@ export default function AuthScreen() {
         <button className="auth-btn" disabled={busy || !username || !password}
           onClick={() => run(() => cloudRestore(username, password))}>
           {busy ? 'Restoring…' : 'Restore my boat'}
+        </button>
+        <button className="auth-link" onClick={() => { setError(''); setMode('forgotPassword') }}>
+          Forgot your password?
         </button>
         <button className="auth-link" onClick={() => { setError(''); setMode(firstRun ? 'signup' : 'login') }}>← Back</button>
       </AuthShell>

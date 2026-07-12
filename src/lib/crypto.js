@@ -99,6 +99,14 @@ export async function importAesKeyRaw(raw, usages = ['wrapKey', 'unwrapKey']) {
   return subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, usages)
 }
 
+// Export/import a DEK as base64 (for cloud escrow in the convenience model).
+export async function exportKeyB64(key) {
+  return bufToB64(await subtle.exportKey('raw', key))
+}
+export async function importKeyB64(b64) {
+  return subtle.importKey('raw', new Uint8Array(b64ToBuf(b64)), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt'])
+}
+
 // ── recovery code ──────────────────────────────────────────
 // Human-friendly, unambiguous alphabet (no 0/O/1/I), grouped for readability.
 const RC_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
