@@ -35,6 +35,8 @@ export const DATA_KEYS = [
   'c445-prefs',
   'c445-labels',
   'c445-boat-id',
+  'c445-boats',
+  'c445-boatdata',
 ]
 
 // ── account records ────────────────────────────────────────

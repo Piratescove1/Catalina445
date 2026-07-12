@@ -19,6 +19,8 @@ import HelpScreen from './components/HelpScreen'
 import LinkDevice from './components/LinkDevice'
 import LicenseScreen from './components/LicenseScreen'
 import CloudLogin from './components/CloudLogin'
+import ManageBoats from './components/ManageBoats'
+import { useBoats } from './context/BoatsContext'
 import { useLicense } from './hooks/useLicense'
 import { useCompartments } from './context/CompartmentsContext'
 import './index.css'
@@ -126,6 +128,7 @@ export default function App() {
   const [linkMode, setLinkMode]       = useState(null) // 'share' | 'receive' | null
   const [showLicense, setShowLicense] = useState(false)
   const [showCloud, setShowCloud]     = useState(false)
+  const [showBoats, setShowBoats]     = useState(false)
   const [snapshots, setSnapshots]     = useState([])
   const fileInputRef                  = useRef(null)
 
@@ -174,7 +177,9 @@ export default function App() {
     importMaintenance(maint, future)
     importDitchBag(ditchSop, ditchItemsRemote)
     importLockers(lockers)
-    importProvisions(provisions, provCats)
+    // Provisioning is shared (not per boat), so a per-boat sync pull leaves it
+    // undefined — only import it when actually provided (e.g. a JSON restore).
+    if (provisions !== undefined) importProvisions(provisions, provCats)
     importLabels(remoteLabels)
     importPrefs(remotePrefs)
   }, [importData, importMaintenance, importDitchBag, importLockers, importProvisions, importLabels, importPrefs])
@@ -211,6 +216,7 @@ export default function App() {
 
   const license = useLicense(boatId)
   const { compartments, areas, importCompartments, importAreas } = useCompartments()
+  const { activeBoat } = useBoats()
   const handleCheckout = (plan) => {
     // Phase 4b wires this to Stripe Checkout for the selected plan.
     alert(`Online payment for the ${plan.label} plan will be enabled once Stripe is connected.`)
@@ -297,6 +303,10 @@ export default function App() {
       {showPrefs && (
         <div className="sync-panel sync-panel--scrollable">
           <p className="sync-panel-title">Settings</p>
+          <div className="account-row">
+            <span className="account-who">Boat: <strong>{activeBoat?.name || '—'}</strong></span>
+            <button className="export-btn" onClick={() => { setShowPrefs(false); setShowBoats(true) }}>Switch / manage</button>
+          </div>
           {account && (
             <div className="account-row">
               <span className="account-who">Signed in as <strong>{account.displayName || account.username}</strong></span>
@@ -423,7 +433,7 @@ export default function App() {
 
       {screen === 'inventory' && (
         <InventoryScreen
-          boatName={prefs.boatName}
+          boatName={activeBoat?.name || prefs.boatName}
           inventory={inventory}
           addItem={addItem}
           removeItem={removeItem}
@@ -508,6 +518,8 @@ export default function App() {
       {showLicense && <LicenseScreen license={license} onClose={() => setShowLicense(false)} onCheckout={handleCheckout} />}
 
       {showCloud && <CloudLogin onClose={() => setShowCloud(false)} />}
+
+      {showBoats && <ManageBoats onClose={() => setShowBoats(false)} />}
 
       {/* Cloud backups (history) dialog */}
       {showHistory && (

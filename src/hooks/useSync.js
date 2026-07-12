@@ -40,6 +40,8 @@ const MAX_SNAPSHOTS = 20
 const CLOUD_ENCRYPTION = false
 
 function buildPayload(inv, voy, maint, future, dSop, dItems, lockers, prov, provCats, lbls, prfs) {
+  // Note: provisioning (prov/provCats) is intentionally NOT synced per boat —
+  // it's a shared, boat-agnostic list, so it's excluded from the per-boat doc.
   return {
     inventory:       inv      || [],
     voyages:         voy      || [],
@@ -48,8 +50,6 @@ function buildPayload(inv, voy, maint, future, dSop, dItems, lockers, prov, prov
     ditchSop:        dSop     || '',
     ditchItems:      dItems   || [],
     lockerInventory: lockers  || {},
-    provItems:       prov     || [],
-    provCategories:  provCats || [],
     labels:          lbls     || {},
     prefs:           prfs     || {},
   }
