@@ -80,6 +80,15 @@ export function clearLocalData() {
   for (const k of DATA_KEYS) localStorage.removeItem(k)
 }
 
+// Full snapshot / restore of ALL app data (every boat + shared) as raw key/values.
+// Used for local + file backups so nothing (e.g. other boats) is missed.
+export function exportAllData() {
+  return snapshotLocalData()
+}
+export function importAllData(obj) {
+  writeLocalData(obj)
+}
+
 // ── vault (encrypted data blob) ────────────────────────────
 export async function writeVault(dek) {
   const blob = await encryptJSON(snapshotLocalData(), dek)

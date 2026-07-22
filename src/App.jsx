@@ -9,6 +9,8 @@ import { usePrefs } from './hooks/usePrefs'
 import { useLabels } from './hooks/useLabels'
 import { useSync, joinBoat } from './hooks/useSync'
 import { useAuth } from './context/AuthContext'
+import { exportAllData } from './lib/vault'
+import { saveLocalBackup, listLocalBackups, pruneLocalBackups, deleteLocalBackup } from './lib/localBackups'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
@@ -130,6 +132,9 @@ export default function App() {
   const [showCloud, setShowCloud]     = useState(false)
   const [showBoats, setShowBoats]     = useState(false)
   const [snapshots, setSnapshots]     = useState([])
+  const [showLocal, setShowLocal]     = useState(false)
+  const [localBackups, setLocalBackups] = useState([])
+  const [showNudge, setShowNudge]     = useState(false)
   const fileInputRef                  = useRef(null)
 
   const { prefs, setPref, importPrefs } = usePrefs()
@@ -186,7 +191,7 @@ export default function App() {
 
   const {
     account, persist, logout, bioAvailable, bioOn, enableBiometric, disableBiometric,
-    encryptData, decryptData, cloudEmail,
+    encryptData, decryptData, cloudEmail, restoreAllData,
   } = useAuth()
 
   const { status, boatId, push, pendingSync, resolveSync, listSnapshots, restoreSnapshot } = useSync({
@@ -222,39 +227,91 @@ export default function App() {
     alert(`Online payment for the ${plan.label} plan will be enabled once Stripe is connected.`)
   }
 
-  // ── Full JSON backup / restore ─────────────────────────────
-  const downloadBackup = useCallback(() => {
-    const data = {
-      _app: 'catalina445', _version: 1, exportedAt: new Date().toISOString(), boatId,
-      inventory, voyages, maintenance, futureProjects, ditchSop: sop, ditchItems,
-      lockerInventory, provItems, provCategories, labels, prefs, compartments, areas,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  // ── Full backup / restore ──────────────────────────────────
+  // A backup is a raw snapshot of every app key (all boats + shared data), so
+  // nothing is missed. exportAllData() reads current localStorage at call time.
+  const buildFullBackup = useCallback(() => ({
+    _app: 'catalina445', _version: 2, exportedAt: new Date().toISOString(),
+    keys: exportAllData(),
+  }), [])
+
+  const backupToFile = useCallback((backup) => {
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `catalina445-backup-${new Date().toISOString().slice(0, 10)}.json`
+    const stamp = (backup?.exportedAt || new Date().toISOString()).slice(0, 10)
+    a.download = `catalina445-backup-${stamp}.json`
     document.body.appendChild(a)
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-  }, [boatId, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs, compartments, areas])
+  }, [])
 
-  const restoreFromFile = useCallback((file) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const d = JSON.parse(reader.result)
-        onRemoteData(d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop, d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs)
-        if (d.areas) importAreas(d.areas)
-        if (d.compartments) importCompartments(d.compartments)
-        alert('Backup restored. Your data has been replaced with the contents of the file.')
-      } catch {
-        alert('That file is not a valid Catalina 445 backup.')
-      }
+  const downloadBackup = useCallback(() => backupToFile(buildFullBackup()), [backupToFile, buildFullBackup])
+
+  const restoreFromFile = useCallback(async (file) => {
+    const text = await file.text().catch(() => null)
+    if (text == null) { alert('Could not read that file.'); return }
+    let d
+    try { d = JSON.parse(text) } catch { alert('That file is not a valid Catalina 445 backup.'); return }
+    if (d && d.keys) {
+      // v2 full snapshot — restore everything, re-encrypt, reload.
+      await restoreAllData(d.keys)
+      return
     }
-    reader.readAsText(file)
-  }, [onRemoteData, importCompartments, importAreas])
+    // v1 legacy (single boat, field-based).
+    try {
+      onRemoteData(d.inventory, d.voyages, d.maintenance, d.futureProjects, d.ditchSop, d.ditchItems, d.lockerInventory, d.provItems, d.provCategories, d.labels, d.prefs)
+      if (d.areas) importAreas(d.areas)
+      if (d.compartments) importCompartments(d.compartments)
+      alert('Backup restored. Your data has been replaced with the contents of the file.')
+    } catch {
+      alert('That file is not a valid Catalina 445 backup.')
+    }
+  }, [restoreAllData, onRemoteData, importCompartments, importAreas])
+
+  // ── Automatic on-device daily backup + once-a-day save nudge ──
+  useEffect(() => {
+    let cancelled = false
+    const today = new Date().toISOString().slice(0, 10)
+    ;(async () => {
+      try {
+        const all = await listLocalBackups()
+        if (cancelled) return
+        if (!all.some(b => b.id === today)) {
+          await saveLocalBackup({ id: today, createdAt: Date.now(), backup: buildFullBackup() })
+          await pruneLocalBackups(14)
+        }
+      } catch { /* IndexedDB unavailable (e.g. private mode) — skip silently */ }
+    })()
+    // Nudge to save a real file at most once a day.
+    try {
+      if (localStorage.getItem('c445-backup-nudge') !== today) setShowNudge(true)
+    } catch { /* ignore */ }
+    return () => { cancelled = true }
+    // Runs once per app open / boat remount; the date guard keeps it to once a day.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const dismissNudge = useCallback(() => {
+    try { localStorage.setItem('c445-backup-nudge', new Date().toISOString().slice(0, 10)) } catch { /* ignore */ }
+    setShowNudge(false)
+  }, [])
+
+  // ── Local backups list (Settings) ──────────────────────────
+  const openLocal = useCallback(async () => {
+    setShowLocal(true)
+    try { setLocalBackups(await listLocalBackups()) } catch { setLocalBackups([]) }
+  }, [])
+
+  const restoreLocal = useCallback(async (rec) => {
+    if (rec?.backup?.keys) await restoreAllData(rec.backup.keys)
+  }, [restoreAllData])
+
+  const deleteLocal = useCallback(async (id) => {
+    try { await deleteLocalBackup(id); setLocalBackups(await listLocalBackups()) } catch { /* ignore */ }
+  }, [])
 
   // ── Cloud history (automatic snapshots) ────────────────────
   const openHistory = useCallback(async () => {
@@ -296,6 +353,17 @@ export default function App() {
             : license.status === 'trial'
               ? `Free trial: ${license.daysLeft} day${license.daysLeft === 1 ? '' : 's'} left — tap to subscribe`
               : `Subscription ends in ${license.daysLeft} days — tap to renew`}
+        </div>
+      )}
+
+      {/* Daily "save a backup file" nudge */}
+      {showNudge && (
+        <div className="backup-nudge">
+          <span className="backup-nudge-text">Save today’s backup to your device?</span>
+          <div className="backup-nudge-btns">
+            <button className="backup-nudge-btn backup-nudge-btn--go" onClick={() => { downloadBackup(); dismissNudge() }}>Save file</button>
+            <button className="backup-nudge-btn" onClick={dismissNudge}>Not now</button>
+          </div>
         </div>
       )}
 
@@ -408,6 +476,10 @@ export default function App() {
                 e.target.value = ''
               }}
             />
+            <div className="settings-row">
+              <span className="settings-label">On-device backups<small>automatic, once a day</small></span>
+              <button className="settings-btn" onClick={openLocal}>Open</button>
+            </div>
             <div className="settings-row">
               <span className="settings-label">Cloud backups</span>
               <button className="settings-btn" onClick={openHistory} disabled={!license.premiumActive}>
@@ -572,6 +644,39 @@ export default function App() {
               )}
             </div>
             <button className="dialog-btn" onClick={() => setShowHistory(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* On-device backups dialog */}
+      {showLocal && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <p className="dialog-title">On-device Backups</p>
+            <p className="dialog-body dialog-body--dim">
+              Saved automatically once a day on this device (last 14 kept). Works offline.
+              Restoring replaces current data on all synced devices, then reloads.
+            </p>
+            <div className="history-list">
+              {localBackups.length === 0 ? (
+                <p className="dialog-body">No on-device backups yet. One is saved automatically each day you open the app.</p>
+              ) : (
+                localBackups.map(b => (
+                  <div key={b.id} className="history-row">
+                    <span className="history-when">{new Date(b.createdAt).toLocaleString()}</span>
+                    <button className="dialog-btn" onClick={() => backupToFile(b.backup)}>Save file</button>
+                    <button
+                      className="dialog-btn dialog-btn--danger"
+                      onClick={() => { if (window.confirm('Restore this backup? This replaces current data on all synced devices, then reloads.')) restoreLocal(b) }}
+                    >
+                      Restore
+                    </button>
+                    <button className="dialog-btn" onClick={() => { if (window.confirm('Delete this on-device backup?')) deleteLocal(b.id) }}>✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+            <button className="dialog-btn" onClick={() => setShowLocal(false)}>Close</button>
           </div>
         </div>
       )}

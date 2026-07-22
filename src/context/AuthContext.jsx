@@ -127,6 +127,14 @@ export function AuthProvider({ children }) {
     if (dekRef.current) await vault.writeVault(dekRef.current)
   }, [])
 
+  // Restore a full snapshot (all boats + data), re-encrypt it into the vault,
+  // then reload so every screen reflects the restored data.
+  const restoreAllData = useCallback(async (keys) => {
+    vault.importAllData(keys)
+    if (dekRef.current) await vault.writeVault(dekRef.current)
+    window.location.reload()
+  }, [])
+
   // Encrypt/decrypt helpers bound to the in-memory boat key, for cloud sync.
   const encryptData = useCallback(async (obj) => {
     if (!dekRef.current) throw new Error('locked')

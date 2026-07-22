@@ -754,6 +754,30 @@ html, body, #root {
 .lic-banner--expired { background: #ff8a80; color: #3b0d0a; }
 .lic-banner--trial { background: var(--brass); }
 .lic-banner--active { background: #ffe8bf; color: #5b3d00; }
+
+.backup-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #e6eef5;
+  color: var(--navy);
+  font-size: 0.85rem;
+}
+.backup-nudge-text { font-weight: 600; }
+.backup-nudge-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.backup-nudge-btn {
+  border: 1px solid var(--navy);
+  background: transparent;
+  color: var(--navy);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.backup-nudge-btn--go { background: var(--navy); color: #fff; }
 .lic-status {
   border-radius: 8px;
   padding: 10px 12px;
