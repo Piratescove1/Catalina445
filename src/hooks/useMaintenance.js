@@ -1,7 +1,10 @@
 /**
  * useMaintenance — manages maintenance log entries and future projects.
  *
- * Maintenance log entry: { id, date, projectName, replacementParts, workDoneBy, approxCost, notes }
+ * Maintenance log entry: { id, date, projectName, replacementParts, workDoneBy,
+ *   approxCost, notes, receipts: [{ id, name, type, addedAt }] }
+ *   - receipts holds only lightweight metadata; the image/PDF bytes live in
+ *     IndexedDB (see lib/receipts.js) so they don't bloat sync or localStorage.
  *
  * Future project: { id, projectName, description, parts: [{ id, name, checked }] }
  *   - parts is a shopping checklist — check off each part as you acquire it
@@ -9,6 +12,7 @@
  * Both are persisted to localStorage and included in Firebase sync.
  */
 import { useState, useCallback } from 'react'
+import { saveReceipt, deleteReceipt as delReceiptBlob, deleteReceipts } from '../lib/receipts'
 
 const MAINTENANCE_KEY     = 'c445-maintenance'
 const FUTURE_PROJECTS_KEY = 'c445-future-projects'
@@ -17,12 +21,12 @@ function load(key) {
   try {
     const raw = localStorage.getItem(key)
     if (raw) return JSON.parse(raw)
-  } catch {}
+  } catch { /* ignore */ }
   return []
 }
 
 function save(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch { /* ignore */ }
 }
 
 export function useMaintenance() {
@@ -49,7 +53,36 @@ export function useMaintenance() {
 
   const deleteEntry = useCallback((id) => {
     setMaintenance(prev => {
+      const gone = prev.find(e => e.id === id)
+      if (gone?.receipts?.length) {
+        deleteReceipts(gone.receipts.map(r => r.id)).catch(() => {})
+      }
       const next = prev.filter(e => e.id !== id)
+      save(MAINTENANCE_KEY, next)
+      return next
+    })
+  }, [])
+
+  // Attach a receipt: store bytes in IndexedDB, keep metadata on the entry.
+  const addReceipt = useCallback(async (entryId, { name, type, dataURL }) => {
+    const id = `r${Date.now()}${Math.floor(Math.random() * 1000)}`
+    const addedAt = Date.now()
+    await saveReceipt({ id, entryId, name, type, dataURL, addedAt })
+    setMaintenance(prev => {
+      const next = prev.map(e => e.id === entryId
+        ? { ...e, receipts: [...(e.receipts || []), { id, name, type, addedAt }] }
+        : e)
+      save(MAINTENANCE_KEY, next)
+      return next
+    })
+  }, [])
+
+  const removeReceipt = useCallback(async (entryId, receiptId) => {
+    await delReceiptBlob(receiptId).catch(() => {})
+    setMaintenance(prev => {
+      const next = prev.map(e => e.id === entryId
+        ? { ...e, receipts: (e.receipts || []).filter(r => r.id !== receiptId) }
+        : e)
       save(MAINTENANCE_KEY, next)
       return next
     })
@@ -124,7 +157,7 @@ export function useMaintenance() {
   }, [])
 
   return {
-    maintenance, addEntry, updateEntry, deleteEntry,
+    maintenance, addEntry, updateEntry, deleteEntry, addReceipt, removeReceipt,
     futureProjects, addProject, updateProject, deleteProject,
     addPart, togglePart, deletePart,
     importMaintenance,

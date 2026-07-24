@@ -11,6 +11,7 @@ import { useSync, joinBoat } from './hooks/useSync'
 import { useAuth } from './context/AuthContext'
 import { exportAllData } from './lib/vault'
 import { saveLocalBackup, listLocalBackups, pruneLocalBackups, deleteLocalBackup } from './lib/localBackups'
+import { allReceipts, bulkPutReceipts } from './lib/receipts'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
@@ -134,7 +135,9 @@ export default function App() {
   const [snapshots, setSnapshots]     = useState([])
   const [showLocal, setShowLocal]     = useState(false)
   const [localBackups, setLocalBackups] = useState([])
-  const [showNudge, setShowNudge]     = useState(false)
+  const [showNudge, setShowNudge]     = useState(() => {
+    try { return localStorage.getItem('c445-backup-nudge') !== new Date().toISOString().slice(0, 10) } catch { return false }
+  })
   const fileInputRef                  = useRef(null)
 
   const { prefs, setPref, importPrefs } = usePrefs()
@@ -155,7 +158,7 @@ export default function App() {
   } = useInventory()
 
   const {
-    maintenance, addEntry, updateEntry, deleteEntry,
+    maintenance, addEntry, updateEntry, deleteEntry, addReceipt, removeReceipt,
     futureProjects, addProject, updateProject, deleteProject,
     addPart, togglePart, deletePart,
     importMaintenance,
@@ -220,7 +223,7 @@ export default function App() {
   }, [persist, inventory, voyages, maintenance, futureProjects, sop, ditchItems, lockerInventory, provItems, provCategories, labels, prefs])
 
   const license = useLicense(boatId)
-  const { compartments, areas, importCompartments, importAreas } = useCompartments()
+  const { compartments, importCompartments, importAreas } = useCompartments()
   const { activeBoat } = useBoats()
   const handleCheckout = (plan) => {
     // Phase 4b wires this to Stripe Checkout for the selected plan.
@@ -228,12 +231,23 @@ export default function App() {
   }
 
   // ── Full backup / restore ──────────────────────────────────
-  // A backup is a raw snapshot of every app key (all boats + shared data), so
-  // nothing is missed. exportAllData() reads current localStorage at call time.
-  const buildFullBackup = useCallback(() => ({
-    _app: 'catalina445', _version: 2, exportedAt: new Date().toISOString(),
-    keys: exportAllData(),
-  }), [])
+  // A backup is a raw snapshot of every app key (all boats + shared data).
+  // Downloadable file backups also embed the maintenance receipt files so they
+  // survive a device wipe; the daily in-app backups skip them (the receipt bytes
+  // already persist in their own store, and 14 daily copies would waste space).
+  const buildFullBackup = useCallback(async ({ withReceipts = true } = {}) => {
+    const backup = {
+      _app: 'catalina445', _version: 3, exportedAt: new Date().toISOString(),
+      keys: exportAllData(),
+    }
+    if (withReceipts) backup.receipts = await allReceipts().catch(() => [])
+    return backup
+  }, [])
+
+  // Write any receipt blobs carried in a backup back into IndexedDB.
+  const restoreReceipts = useCallback(async (backup) => {
+    if (backup?.receipts?.length) await bulkPutReceipts(backup.receipts).catch(() => {})
+  }, [])
 
   const backupToFile = useCallback((backup) => {
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
@@ -248,7 +262,7 @@ export default function App() {
     URL.revokeObjectURL(url)
   }, [])
 
-  const downloadBackup = useCallback(() => backupToFile(buildFullBackup()), [backupToFile, buildFullBackup])
+  const downloadBackup = useCallback(async () => backupToFile(await buildFullBackup()), [backupToFile, buildFullBackup])
 
   const restoreFromFile = useCallback(async (file) => {
     const text = await file.text().catch(() => null)
@@ -256,7 +270,8 @@ export default function App() {
     let d
     try { d = JSON.parse(text) } catch { alert('That file is not a valid Catalina 445 backup.'); return }
     if (d && d.keys) {
-      // v2 full snapshot — restore everything, re-encrypt, reload.
+      // v2/v3 full snapshot — restore receipts, then everything, re-encrypt, reload.
+      await restoreReceipts(d)
       await restoreAllData(d.keys)
       return
     }
@@ -269,7 +284,7 @@ export default function App() {
     } catch {
       alert('That file is not a valid Catalina 445 backup.')
     }
-  }, [restoreAllData, onRemoteData, importCompartments, importAreas])
+  }, [restoreAllData, restoreReceipts, onRemoteData, importCompartments, importAreas])
 
   // ── Automatic on-device daily backup + once-a-day save nudge ──
   useEffect(() => {
@@ -280,15 +295,11 @@ export default function App() {
         const all = await listLocalBackups()
         if (cancelled) return
         if (!all.some(b => b.id === today)) {
-          await saveLocalBackup({ id: today, createdAt: Date.now(), backup: buildFullBackup() })
+          await saveLocalBackup({ id: today, createdAt: Date.now(), backup: await buildFullBackup({ withReceipts: false }) })
           await pruneLocalBackups(14)
         }
       } catch { /* IndexedDB unavailable (e.g. private mode) — skip silently */ }
     })()
-    // Nudge to save a real file at most once a day.
-    try {
-      if (localStorage.getItem('c445-backup-nudge') !== today) setShowNudge(true)
-    } catch { /* ignore */ }
     return () => { cancelled = true }
     // Runs once per app open / boat remount; the date guard keeps it to once a day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -306,12 +317,23 @@ export default function App() {
   }, [])
 
   const restoreLocal = useCallback(async (rec) => {
-    if (rec?.backup?.keys) await restoreAllData(rec.backup.keys)
-  }, [restoreAllData])
+    if (rec?.backup?.keys) {
+      await restoreReceipts(rec.backup)
+      await restoreAllData(rec.backup.keys)
+    }
+  }, [restoreAllData, restoreReceipts])
 
   const deleteLocal = useCallback(async (id) => {
     try { await deleteLocalBackup(id); setLocalBackups(await listLocalBackups()) } catch { /* ignore */ }
   }, [])
+
+  // Export a stored daily backup to a file, attaching current receipt bytes
+  // (daily snapshots omit them) so the downloaded file is a complete backup.
+  const saveLocalToFile = useCallback(async (rec) => {
+    const backup = { ...rec.backup }
+    if (!backup.receipts) backup.receipts = await allReceipts().catch(() => [])
+    backupToFile(backup)
+  }, [backupToFile])
 
   // ── Cloud history (automatic snapshots) ────────────────────
   const openHistory = useCallback(async () => {
@@ -569,6 +591,8 @@ export default function App() {
           addEntry={addEntry}
           updateEntry={updateEntry}
           deleteEntry={deleteEntry}
+          addReceipt={addReceipt}
+          removeReceipt={removeReceipt}
           futureProjects={futureProjects}
           addProject={addProject}
           updateProject={updateProject}
@@ -664,7 +688,7 @@ export default function App() {
                 localBackups.map(b => (
                   <div key={b.id} className="history-row">
                     <span className="history-when">{new Date(b.createdAt).toLocaleString()}</span>
-                    <button className="dialog-btn" onClick={() => backupToFile(b.backup)}>Save file</button>
+                    <button className="dialog-btn" onClick={() => saveLocalToFile(b)}>Save file</button>
                     <button
                       className="dialog-btn dialog-btn--danger"
                       onClick={() => { if (window.confirm('Restore this backup? This replaces current data on all synced devices, then reloads.')) restoreLocal(b) }}

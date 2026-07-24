@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { exportMaintenancePDF } from '../utils/exportMaintenancePDF'
+import { fileToReceipt, getReceipt } from '../lib/receipts'
 
 const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
@@ -31,9 +32,139 @@ function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCanc
   )
 }
 
+// ── Receipts ─────────────────────────────────────────────
+
+// A single receipt thumbnail. Loads its bytes from IndexedDB on mount; if the
+// bytes aren't on this device (e.g. added on another device), shows a hint.
+function ReceiptThumb({ meta, onView, onDelete }) {
+  const [state, setState] = useState({ status: 'loading', dataURL: null })
+
+  useEffect(() => {
+    let alive = true
+    getReceipt(meta.id)
+      .then(rec => { if (alive) setState(rec?.dataURL ? { status: 'ok', dataURL: rec.dataURL } : { status: 'missing', dataURL: null }) })
+      .catch(() => { if (alive) setState({ status: 'missing', dataURL: null }) })
+    return () => { alive = false }
+  }, [meta.id])
+
+  return (
+    <div className="receipt-thumb">
+      <button
+        className="receipt-thumb-btn"
+        onClick={() => state.status === 'ok' && onView(state.dataURL)}
+        disabled={state.status !== 'ok'}
+        title={meta.name}
+      >
+        {state.status === 'ok' && meta.type === 'image'
+          ? <img src={state.dataURL} alt={meta.name} className="receipt-thumb-img" />
+          : (
+            <span className="receipt-thumb-placeholder">
+              {meta.type === 'pdf' ? '📄' : state.status === 'missing' ? '☁️' : '…'}
+              <small>{state.status === 'missing' ? 'other device' : meta.type === 'pdf' ? 'PDF' : ''}</small>
+            </span>
+          )}
+      </button>
+      <button className="receipt-thumb-del" onClick={onDelete} aria-label={`Delete ${meta.name}`}>✕</button>
+    </div>
+  )
+}
+
+// Full-screen viewer for an image (or PDF via new tab).
+function ReceiptViewer({ dataURL, onClose }) {
+  return (
+    <div className="receipt-viewer" onClick={onClose}>
+      <img src={dataURL} alt="Receipt" className="receipt-viewer-img" onClick={e => e.stopPropagation()} />
+      <button className="receipt-viewer-close" onClick={onClose}>Close</button>
+    </div>
+  )
+}
+
+function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
+  const fileRef = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const [viewing, setViewing] = useState(null) // dataURL being viewed
+  const [confirmDel, setConfirmDel] = useState(null) // receipt meta pending delete
+  const receipts = entry.receipts || []
+
+  const handleFiles = async (fileList) => {
+    const files = Array.from(fileList || [])
+    if (!files.length) return
+    setBusy(true)
+    try {
+      for (const f of files) {
+        try {
+          await onAddReceipt(entry.id, await fileToReceipt(f))
+        } catch (err) {
+          alert(
+            err?.message === 'pdf-too-large' ? 'That PDF is too large (max 8 MB).'
+            : err?.message === 'unsupported-type' ? 'Please choose a photo (JPG/PNG) or a PDF.'
+            : 'Could not add that file.'
+          )
+        }
+      }
+    } finally { setBusy(false) }
+  }
+
+  const viewReceipt = async (meta) => {
+    const rec = await getReceipt(meta.id).catch(() => null)
+    if (!rec?.dataURL) { alert('This receipt is stored on another device.'); return }
+    if (meta.type === 'pdf') {
+      const w = window.open()
+      if (w) w.document.write(`<iframe src="${rec.dataURL}" style="border:0;width:100%;height:100%"></iframe>`)
+    } else {
+      setViewing(rec.dataURL)
+    }
+  }
+
+  return (
+    <div className="receipts">
+      <div className="receipts-header">
+        <span className="receipts-title">🧾 Receipts{receipts.length > 0 ? ` (${receipts.length})` : ''}</span>
+        <button className="maint-action-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+          {busy ? 'Adding…' : '+ Add'}
+        </button>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        style={{ display: 'none' }}
+        onChange={e => { handleFiles(e.target.files); e.target.value = '' }}
+      />
+      {receipts.length > 0 && (
+        <div className="receipts-grid">
+          {receipts.map(meta => (
+            meta.type === 'pdf'
+              ? (
+                <div key={meta.id} className="receipt-thumb">
+                  <button className="receipt-thumb-btn" onClick={() => viewReceipt(meta)} title={meta.name}>
+                    <span className="receipt-thumb-placeholder">📄<small>PDF</small></span>
+                  </button>
+                  <button className="receipt-thumb-del" onClick={() => setConfirmDel(meta)} aria-label={`Delete ${meta.name}`}>✕</button>
+                </div>
+              )
+              : <ReceiptThumb key={meta.id} meta={meta} onView={setViewing} onDelete={() => setConfirmDel(meta)} />
+          ))}
+        </div>
+      )}
+      {viewing && <ReceiptViewer dataURL={viewing} onClose={() => setViewing(null)} />}
+      {confirmDel && (
+        <ConfirmDialog
+          title="Delete Receipt?"
+          body={`Remove "${confirmDel.name}"? This cannot be undone.`}
+          confirmLabel="Yes, delete"
+          onConfirm={() => { const m = confirmDel; setConfirmDel(null); onRemoveReceipt(entry.id, m.id) }}
+          onCancel={() => setConfirmDel(null)}
+        />
+      )}
+    </div>
+  )
+}
+
 // ── Maintenance log components ───────────────────────────
 
-function EntryCard({ entry, onEdit, onDelete }) {
+function EntryCard({ entry, onEdit, onDelete, onAddReceipt, onRemoveReceipt }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   return (
     <div className="maint-card">
@@ -58,6 +189,7 @@ function EntryCard({ entry, onEdit, onDelete }) {
       {entry.workDoneBy      && <div className="maint-field"><span className="maint-label">Work by:</span><span className="maint-value">{entry.workDoneBy}</span></div>}
       {entry.approxCost      && <div className="maint-field"><span className="maint-label">Cost:</span><span className="maint-value">${entry.approxCost}</span></div>}
       {entry.notes           && <p className="maint-notes">{entry.notes}</p>}
+      <ReceiptsSection entry={entry} onAddReceipt={onAddReceipt} onRemoveReceipt={onRemoveReceipt} />
     </div>
   )
 }
@@ -209,7 +341,7 @@ function ProjectForm({ initial, onSave, onCancel }) {
 // ── Main screen ──────────────────────────────────────────
 
 export default function MaintenanceScreen({
-  maintenance, addEntry, updateEntry, deleteEntry,
+  maintenance, addEntry, updateEntry, deleteEntry, addReceipt, removeReceipt,
   futureProjects, addProject, updateProject, deleteProject,
   addPart, togglePart, deletePart,
 }) {
@@ -292,7 +424,14 @@ export default function MaintenanceScreen({
               <p className="voyage-empty">No maintenance records yet. Tap "+ New Entry" to add one.</p>
             )}
             {maintenance.map(entry => (
-              <EntryCard key={entry.id} entry={entry} onEdit={() => handleEdit(entry)} onDelete={() => deleteEntry(entry.id)} />
+              <EntryCard
+                key={entry.id}
+                entry={entry}
+                onEdit={() => handleEdit(entry)}
+                onDelete={() => deleteEntry(entry.id)}
+                onAddReceipt={addReceipt}
+                onRemoveReceipt={removeReceipt}
+              />
             ))}
           </>
         )}
