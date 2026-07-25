@@ -792,6 +792,7 @@ html, body, #root {
   gap: 8px;
 }
 .receipts-title { font-size: 0.82rem; font-weight: 700; color: var(--navy); }
+.receipts-header-actions { display: flex; gap: 6px; align-items: center; }
 .receipts-grid {
   display: flex;
   flex-wrap: wrap;

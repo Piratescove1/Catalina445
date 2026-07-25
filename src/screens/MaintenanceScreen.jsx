@@ -36,7 +36,7 @@ function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCanc
 
 // A single receipt thumbnail. Loads its bytes from IndexedDB on mount; if the
 // bytes aren't on this device (e.g. added on another device), shows a hint.
-function ReceiptThumb({ meta, onView, onDelete }) {
+function ReceiptThumb({ meta, onView, onDelete, editing }) {
   const [state, setState] = useState({ status: 'loading', dataURL: null })
 
   useEffect(() => {
@@ -64,7 +64,7 @@ function ReceiptThumb({ meta, onView, onDelete }) {
             </span>
           )}
       </button>
-      <button className="receipt-thumb-del" onClick={onDelete} aria-label={`Delete ${meta.name}`}>✕</button>
+      {editing && <button className="receipt-thumb-del" onClick={onDelete} aria-label={`Delete ${meta.name}`}>✕</button>}
     </div>
   )
 }
@@ -82,6 +82,7 @@ function ReceiptViewer({ dataURL, onClose }) {
 function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false) // reveal delete (✕) only in edit mode
   const [viewing, setViewing] = useState(null) // dataURL being viewed
   const [confirmDel, setConfirmDel] = useState(null) // receipt meta pending delete
   const receipts = entry.receipts || []
@@ -120,9 +121,16 @@ function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
     <div className="receipts">
       <div className="receipts-header">
         <span className="receipts-title">🧾 Receipts{receipts.length > 0 ? ` (${receipts.length})` : ''}</span>
-        <button className="maint-action-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-          {busy ? 'Adding…' : '+ Add'}
-        </button>
+        <div className="receipts-header-actions">
+          {receipts.length > 0 && (
+            <button className="maint-action-btn" onClick={() => setEditing(e => !e)}>
+              {editing ? 'Done' : 'Edit'}
+            </button>
+          )}
+          <button className="maint-action-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+            {busy ? 'Adding…' : '+ Add'}
+          </button>
+        </div>
       </div>
       <input
         ref={fileRef}
@@ -141,10 +149,10 @@ function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
                   <button className="receipt-thumb-btn" onClick={() => viewReceipt(meta)} title={meta.name}>
                     <span className="receipt-thumb-placeholder">📄<small>PDF</small></span>
                   </button>
-                  <button className="receipt-thumb-del" onClick={() => setConfirmDel(meta)} aria-label={`Delete ${meta.name}`}>✕</button>
+                  {editing && <button className="receipt-thumb-del" onClick={() => setConfirmDel(meta)} aria-label={`Delete ${meta.name}`}>✕</button>}
                 </div>
               )
-              : <ReceiptThumb key={meta.id} meta={meta} onView={setViewing} onDelete={() => setConfirmDel(meta)} />
+              : <ReceiptThumb key={meta.id} meta={meta} onView={setViewing} onDelete={() => setConfirmDel(meta)} editing={editing} />
           ))}
         </div>
       )}
