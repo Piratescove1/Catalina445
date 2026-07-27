@@ -122,13 +122,13 @@ function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
       <div className="receipts-header">
         <span className="receipts-title">🧾 Receipts{receipts.length > 0 ? ` (${receipts.length})` : ''}</span>
         <div className="receipts-header-actions">
-          {receipts.length > 0 && (
-            <button className="maint-action-btn" onClick={() => setEditing(e => !e)}>
-              {editing ? 'Done' : 'Edit'}
+          {editing && (
+            <button className="maint-action-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+              {busy ? 'Adding…' : '+ Add'}
             </button>
           )}
-          <button className="maint-action-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-            {busy ? 'Adding…' : '+ Add'}
+          <button className="maint-action-btn" onClick={() => setEditing(e => !e)}>
+            {editing ? 'Done' : 'Edit'}
           </button>
         </div>
       </div>
