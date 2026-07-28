@@ -15,6 +15,14 @@ service cloud.firestore {
       match /history/{snapId} {
         allow read, write: if true;
       }
+
+      // Maintenance receipt files (one doc per receipt, ≤1 MB). Reachable only
+      // via the exact boat code + receipt id; listing stays blocked.
+      match /receipts/{receiptId} {
+        allow get: if true;
+        allow list: if false;
+        allow create, update, delete: if true;
+      }
     }
 
     // Cloud login / recovery: each signed-in user can read/write only their own

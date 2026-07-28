@@ -1,27 +1,31 @@
-// Cross-device sync for maintenance receipt files via Firebase Storage.
+// Cross-device sync for maintenance receipt files via Firestore (free Spark
+// plan — no Cloud Storage / billing needed).
 //
-// Receipt bytes are too large for the 1 MB per-boat Firestore doc, so they live
-// in Firebase Storage at receipts/{boatId}/{receiptId}. The maintenance entry
-// still only carries lightweight metadata (synced via Firestore); this module
-// moves the actual bytes.
+// Receipt bytes are too large for the shared 1 MB per-boat doc, so each receipt
+// gets its OWN document at boats/{boatId}/receipts/{receiptId} (also 1 MB max).
+// The maintenance entry still carries only lightweight metadata; this module
+// moves the actual bytes. Images are pre-compressed to fit; a rare oversized
+// PDF that won't fit in a doc stays device-local.
 //
-// Offline-first: uploads that can't complete (no signal) are queued in
-// localStorage and retried on reconnect / next app open. Downloads happen on
-// demand when a device needs bytes it doesn't have locally, and are cached in
-// IndexedDB so they're then available offline.
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage'
-import { storage, configured } from './firebase'
+// Offline-first: uploads that can't complete are queued in localStorage and
+// retried on reconnect / next app open. Downloads happen on demand and are
+// cached in IndexedDB so they're then available offline.
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
+import { db, configured } from './firebase'
 import { getReceipt, saveReceipt } from './receipts'
 
 const QUEUE_KEY = 'c445-receipt-uploads'
 const BOAT_ID_KEY = 'c445-boat-id'
+// Keep well under Firestore's 1,048,576-byte doc limit (leave room for the
+// other fields + overhead). A receipt whose data URL exceeds this stays local.
+const MAX_DOC_CHARS = 1_000_000
 
 function currentBoatId() {
   return localStorage.getItem(BOAT_ID_KEY) || ''
 }
 
-function pathFor(boatId, id) {
-  return `receipts/${boatId}/${id}`
+function receiptDoc(boatId, id) {
+  return doc(db, 'boats', boatId, 'receipts', id)
 }
 
 // ── upload queue (persisted so it survives reloads) ──────────
@@ -43,7 +47,7 @@ function dequeue(boatId, id) {
 }
 
 export function available() {
-  return configured && !!storage
+  return configured && !!db
 }
 
 // Queue a receipt for upload and immediately try to flush.
@@ -66,8 +70,12 @@ export async function flushUploads() {
     for (const entry of loadQueue()) {
       try {
         const rec = await getReceipt(entry.id)
-        if (!rec?.dataURL) { dequeue(entry.boatId, entry.id); continue } // gone locally
-        await uploadString(ref(storage, pathFor(entry.boatId, entry.id)), rec.dataURL, 'data_url')
+        if (!rec?.dataURL) { dequeue(entry.boatId, entry.id); continue }        // gone locally
+        if (rec.dataURL.length > MAX_DOC_CHARS) { dequeue(entry.boatId, entry.id); continue } // too big to sync; stays local
+        await setDoc(receiptDoc(entry.boatId, entry.id), {
+          id: rec.id, entryId: rec.entryId, name: rec.name,
+          type: rec.type, dataURL: rec.dataURL, addedAt: rec.addedAt,
+        })
         dequeue(entry.boatId, entry.id)
       } catch {
         // Network/permission error — keep it queued and stop; retry next time.
@@ -86,17 +94,15 @@ export async function fetchReceipt(meta) {
   const boatId = currentBoatId()
   if (!boatId) return null
   try {
-    const url = await getDownloadURL(ref(storage, pathFor(boatId, meta.id)))
-    const resp = await fetch(url)
-    const blob = await resp.blob()
-    const dataURL = await new Promise((resolve, reject) => {
-      const r = new FileReader()
-      r.onload = () => resolve(r.result)
-      r.onerror = () => reject(r.error)
-      r.readAsDataURL(blob)
+    const snap = await getDoc(receiptDoc(boatId, meta.id))
+    if (!snap.exists()) return null
+    const data = snap.data()
+    if (!data?.dataURL) return null
+    await saveReceipt({
+      id: meta.id, entryId: data.entryId ?? meta.entryId, name: data.name ?? meta.name,
+      type: data.type ?? meta.type, dataURL: data.dataURL, addedAt: data.addedAt ?? meta.addedAt,
     })
-    await saveReceipt({ id: meta.id, entryId: meta.entryId, name: meta.name, type: meta.type, dataURL, addedAt: meta.addedAt })
-    return dataURL
+    return data.dataURL
   } catch {
     return null
   }
@@ -107,5 +113,5 @@ export async function deleteRemoteReceipt(id) {
   const boatId = currentBoatId()
   if (boatId) dequeue(boatId, id)
   if (!available() || !boatId) return
-  try { await deleteObject(ref(storage, pathFor(boatId, id))) } catch { /* already gone / offline */ }
+  try { await deleteDoc(receiptDoc(boatId, id)) } catch { /* already gone / offline */ }
 }

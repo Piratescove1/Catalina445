@@ -7,7 +7,7 @@
 // lightweight metadata ({ id, name, type, addedAt }) which syncs + backs up.
 //
 // Record shape: { id, entryId, name, type: 'image'|'pdf', dataURL, addedAt }
-import { fileToCompressedDataURL } from './image'
+import { fileToConstrainedDataURL } from './image'
 
 const DB_NAME = 'c445-receipts'
 const STORE = 'receipts'
@@ -46,7 +46,8 @@ function tx(mode, fn) {
 export async function fileToReceipt(file) {
   if (!file) throw new Error('no-file')
   if (file.type?.startsWith('image/')) {
-    const dataURL = await fileToCompressedDataURL(file)
+    // Constrain so the image fits in a single Firestore doc (cross-device sync).
+    const dataURL = await fileToConstrainedDataURL(file)
     return { name: file.name || 'photo.jpg', type: 'image', dataURL }
   }
   if (file.type === 'application/pdf') {

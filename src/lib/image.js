@@ -29,3 +29,16 @@ export function fileToCompressedDataURL(file, maxDim = 1400, quality = 0.8) {
     img.src = url
   })
 }
+
+// Compress an image so the resulting data URL fits within maxChars (so it can be
+// stored in a single Firestore document, ~1 MB). Steps down size/quality until
+// it fits; returns the smallest attempt even if the last one still exceeds.
+export async function fileToConstrainedDataURL(file, maxChars = 900000) {
+  const attempts = [[1400, 0.8], [1200, 0.7], [1000, 0.6], [800, 0.5], [640, 0.45]]
+  let last = null
+  for (const [dim, q] of attempts) {
+    last = await fileToCompressedDataURL(file, dim, q)
+    if (last.length <= maxChars) return last
+  }
+  return last
+}
