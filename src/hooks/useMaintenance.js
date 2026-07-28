@@ -11,9 +11,9 @@
  *
  * Both are persisted to localStorage and included in Firebase sync.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { saveReceipt, deleteReceipt as delReceiptBlob, deleteReceipts } from '../lib/receipts'
-import { uploadReceipt, deleteRemoteReceipt } from '../lib/receiptSync'
+import { uploadReceipt, deleteRemoteReceipt, backfillReceipts } from '../lib/receiptSync'
 
 const MAINTENANCE_KEY     = 'c445-maintenance'
 const FUTURE_PROJECTS_KEY = 'c445-future-projects'
@@ -33,6 +33,14 @@ function save(key, data) {
 export function useMaintenance() {
   const [maintenance,     setMaintenance]     = useState(() => load(MAINTENANCE_KEY))
   const [futureProjects,  setFutureProjects]  = useState(() => load(FUTURE_PROJECTS_KEY))
+
+  // Back-fill sync: upload any receipts that live on this device but aren't in
+  // the cloud yet (e.g. added before sync existed). Idempotent — skips ones
+  // already uploaded and ones whose bytes aren't on this device.
+  useEffect(() => {
+    const ids = maintenance.flatMap(e => (e.receipts || []).map(r => r.id))
+    if (ids.length) backfillReceipts(ids).catch(() => {})
+  }, [maintenance])
 
   // ── Maintenance log ─────────────────────────────────────
 

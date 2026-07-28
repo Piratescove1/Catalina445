@@ -15,6 +15,7 @@ import { db, configured } from './firebase'
 import { getReceipt, saveReceipt } from './receipts'
 
 const QUEUE_KEY = 'c445-receipt-uploads'
+const SYNCED_KEY = 'c445-receipts-synced' // ids already pushed to the cloud (per boat)
 const BOAT_ID_KEY = 'c445-boat-id'
 // Keep well under Firestore's 1,048,576-byte doc limit (leave room for the
 // other fields + overhead). A receipt whose data URL exceeds this stays local.
@@ -44,6 +45,20 @@ function enqueue(boatId, id) {
 }
 function dequeue(boatId, id) {
   saveQueue(loadQueue().filter(e => !(e.boatId === boatId && e.id === id)))
+}
+
+// ── "already uploaded" set (avoids re-uploading on every open) ──
+function syncedKey(boatId, id) { return `${boatId}:${id}` }
+function loadSynced() {
+  try { return new Set(JSON.parse(localStorage.getItem(SYNCED_KEY)) || []) } catch { return new Set() }
+}
+function markSynced(boatId, id) {
+  const s = loadSynced()
+  s.add(syncedKey(boatId, id))
+  try { localStorage.setItem(SYNCED_KEY, JSON.stringify([...s])) } catch { /* ignore */ }
+}
+function isSynced(boatId, id) {
+  return loadSynced().has(syncedKey(boatId, id))
 }
 
 export function available() {
@@ -76,6 +91,7 @@ export async function flushUploads() {
           id: rec.id, entryId: rec.entryId, name: rec.name,
           type: rec.type, dataURL: rec.dataURL, addedAt: rec.addedAt,
         })
+        markSynced(entry.boatId, entry.id)
         dequeue(entry.boatId, entry.id)
       } catch {
         // Network/permission error — keep it queued and stop; retry next time.
@@ -85,6 +101,26 @@ export async function flushUploads() {
   } finally {
     flushing = false
   }
+}
+
+// Back-fill: upload any of the given receipt ids that live on this device but
+// haven't been pushed to the cloud yet (e.g. added before sync existed). Only
+// receipts whose bytes are actually here get uploaded; others are skipped.
+// `ids` should be the CURRENT boat's receipt ids so multi-boat stays correct.
+export async function backfillReceipts(ids) {
+  if (!available() || !ids?.length) return
+  const boatId = currentBoatId()
+  if (!boatId) return
+  let queuedAny = false
+  for (const id of ids) {
+    if (isSynced(boatId, id)) continue
+    const rec = await getReceipt(id).catch(() => null)
+    if (!rec?.dataURL) continue                          // bytes aren't on this device
+    if (rec.dataURL.length > MAX_DOC_CHARS) continue     // too big to sync; stays local
+    enqueue(boatId, id)
+    queuedAny = true
+  }
+  if (queuedAny) await flushUploads()
 }
 
 // Fetch a receipt's bytes from the cloud, cache locally, and return the dataURL.
