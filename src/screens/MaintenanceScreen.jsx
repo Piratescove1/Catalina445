@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { exportMaintenancePDF } from '../utils/exportMaintenancePDF'
 import { fileToReceipt, getReceipt } from '../lib/receipts'
+import { fetchReceipt } from '../lib/receiptSync'
 
 const EMPTY_FORM = {
   date: new Date().toISOString().slice(0, 10),
@@ -36,16 +37,24 @@ function ConfirmDialog({ title, body, confirmLabel = 'Delete', onConfirm, onCanc
 
 // A single receipt thumbnail. Loads its bytes from IndexedDB on mount; if the
 // bytes aren't on this device (e.g. added on another device), shows a hint.
-function ReceiptThumb({ meta, onView, onDelete, editing }) {
+function ReceiptThumb({ meta, entryId, onView, onDelete, editing }) {
   const [state, setState] = useState({ status: 'loading', dataURL: null })
 
+  const { id, name, type, addedAt } = meta
   useEffect(() => {
     let alive = true
-    getReceipt(meta.id)
-      .then(rec => { if (alive) setState(rec?.dataURL ? { status: 'ok', dataURL: rec.dataURL } : { status: 'missing', dataURL: null }) })
-      .catch(() => { if (alive) setState({ status: 'missing', dataURL: null }) })
+    ;(async () => {
+      // Local first; if the bytes aren't on this device, try the cloud.
+      const rec = await getReceipt(id).catch(() => null)
+      let dataURL = rec?.dataURL || null
+      if (!dataURL) {
+        if (alive) setState({ status: 'fetching', dataURL: null })
+        dataURL = await fetchReceipt({ id, entryId, name, type, addedAt }).catch(() => null)
+      }
+      if (alive) setState(dataURL ? { status: 'ok', dataURL } : { status: 'missing', dataURL: null })
+    })()
     return () => { alive = false }
-  }, [meta.id])
+  }, [id, entryId, name, type, addedAt])
 
   return (
     <div className="receipt-thumb">
@@ -59,8 +68,14 @@ function ReceiptThumb({ meta, onView, onDelete, editing }) {
           ? <img src={state.dataURL} alt={meta.name} className="receipt-thumb-img" />
           : (
             <span className="receipt-thumb-placeholder">
-              {meta.type === 'pdf' ? '📄' : state.status === 'missing' ? '☁️' : '…'}
-              <small>{state.status === 'missing' ? 'other device' : meta.type === 'pdf' ? 'PDF' : ''}</small>
+              {meta.type === 'pdf' && state.status === 'ok' ? '📄'
+                : state.status === 'missing' ? '☁️'
+                : '…'}
+              <small>
+                {state.status === 'fetching' ? 'loading…'
+                  : state.status === 'missing' ? 'unavailable'
+                  : meta.type === 'pdf' ? 'PDF' : ''}
+              </small>
             </span>
           )}
       </button>
@@ -107,13 +122,15 @@ function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
   }
 
   const viewReceipt = async (meta) => {
-    const rec = await getReceipt(meta.id).catch(() => null)
-    if (!rec?.dataURL) { alert('This receipt is stored on another device.'); return }
+    let rec = await getReceipt(meta.id).catch(() => null)
+    let dataURL = rec?.dataURL || null
+    if (!dataURL) dataURL = await fetchReceipt({ ...meta, entryId: entry.id }).catch(() => null)
+    if (!dataURL) { alert('This receipt isn’t available on this device yet. Open it on the device it was added on, or make sure you have a connection so it can download.'); return }
     if (meta.type === 'pdf') {
       const w = window.open()
-      if (w) w.document.write(`<iframe src="${rec.dataURL}" style="border:0;width:100%;height:100%"></iframe>`)
+      if (w) w.document.write(`<iframe src="${dataURL}" style="border:0;width:100%;height:100%"></iframe>`)
     } else {
-      setViewing(rec.dataURL)
+      setViewing(dataURL)
     }
   }
 
@@ -152,7 +169,7 @@ function ReceiptsSection({ entry, onAddReceipt, onRemoveReceipt }) {
                   {editing && <button className="receipt-thumb-del" onClick={() => setConfirmDel(meta)} aria-label={`Delete ${meta.name}`}>✕</button>}
                 </div>
               )
-              : <ReceiptThumb key={meta.id} meta={meta} onView={setViewing} onDelete={() => setConfirmDel(meta)} editing={editing} />
+              : <ReceiptThumb key={meta.id} meta={meta} entryId={entry.id} onView={setViewing} onDelete={() => setConfirmDel(meta)} editing={editing} />
           ))}
         </div>
       )}

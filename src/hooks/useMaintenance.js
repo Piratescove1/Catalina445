@@ -13,6 +13,7 @@
  */
 import { useState, useCallback } from 'react'
 import { saveReceipt, deleteReceipt as delReceiptBlob, deleteReceipts } from '../lib/receipts'
+import { uploadReceipt, deleteRemoteReceipt } from '../lib/receiptSync'
 
 const MAINTENANCE_KEY     = 'c445-maintenance'
 const FUTURE_PROJECTS_KEY = 'c445-future-projects'
@@ -55,7 +56,9 @@ export function useMaintenance() {
     setMaintenance(prev => {
       const gone = prev.find(e => e.id === id)
       if (gone?.receipts?.length) {
-        deleteReceipts(gone.receipts.map(r => r.id)).catch(() => {})
+        const ids = gone.receipts.map(r => r.id)
+        deleteReceipts(ids).catch(() => {})
+        ids.forEach(rid => deleteRemoteReceipt(rid).catch(() => {}))
       }
       const next = prev.filter(e => e.id !== id)
       save(MAINTENANCE_KEY, next)
@@ -75,10 +78,13 @@ export function useMaintenance() {
       save(MAINTENANCE_KEY, next)
       return next
     })
+    // Push the bytes to the cloud so other devices can get them (queues if offline).
+    uploadReceipt(id).catch(() => {})
   }, [])
 
   const removeReceipt = useCallback(async (entryId, receiptId) => {
     await delReceiptBlob(receiptId).catch(() => {})
+    deleteRemoteReceipt(receiptId).catch(() => {})
     setMaintenance(prev => {
       const next = prev.map(e => e.id === entryId
         ? { ...e, receipts: (e.receipts || []).filter(r => r.id !== receiptId) }

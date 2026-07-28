@@ -12,6 +12,7 @@ import { useAuth } from './context/AuthContext'
 import { exportAllData } from './lib/vault'
 import { saveLocalBackup, listLocalBackups, pruneLocalBackups, deleteLocalBackup } from './lib/localBackups'
 import { allReceipts, bulkPutReceipts } from './lib/receipts'
+import { flushUploads } from './lib/receiptSync'
 import InventoryScreen from './screens/InventoryScreen'
 import VoyageScreen from './screens/VoyageScreen'
 import MaintenanceScreen from './screens/MaintenanceScreen'
@@ -303,6 +304,14 @@ export default function App() {
     return () => { cancelled = true }
     // Runs once per app open / boat remount; the date guard keeps it to once a day.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Retry any receipt uploads that were queued while offline.
+  useEffect(() => {
+    flushUploads().catch(() => {})
+    const onOnline = () => { flushUploads().catch(() => {}) }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
   }, [])
 
   const dismissNudge = useCallback(() => {

@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Maintenance receipt files, stored at receipts/{boatId}/{receiptId}.
+//
+// Trust model matches the Firestore rules: a boat is reached only by its exact
+// (unguessable) boat code, so we allow read/write to a known path but never
+// allow listing a boat's folder. Files are capped so nobody can abuse storage.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /receipts/{boatId}/{receiptId} {
+      allow read: if true;
+      allow write: if request.resource == null                      // deletes
+                   || request.resource.size < 12 * 1024 * 1024;     // ≤ 12 MB per file
+      // Listing is not granted (no `list` here), so folders can't be enumerated.
+    }
+
+    // Deny everything else.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
