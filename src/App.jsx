@@ -154,6 +154,7 @@ export default function App() {
     inventory, voyages, activeVoyage,
     addItem, removeItem, setItemQty, deleteItem, renameItem, findItem,
     startVoyage, endVoyage, resumeVoyage, renameVoyage,
+    startSail, endSail, renameSail, deleteSail,
     addVoyageNote, addLogEntry, updateLogEntry, deleteLogEntry, deleteVoyage,
     importData,
   } = useInventory()
@@ -587,6 +588,10 @@ export default function App() {
           endVoyage={endVoyage}
           resumeVoyage={resumeVoyage}
           renameVoyage={renameVoyage}
+          startSail={startSail}
+          endSail={endSail}
+          renameSail={renameSail}
+          deleteSail={deleteSail}
           addVoyageNote={addVoyageNote}
           addLogEntry={addLogEntry}
           updateLogEntry={updateLogEntry}

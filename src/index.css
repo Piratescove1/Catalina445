@@ -1845,6 +1845,93 @@ html, body, #root {
   border-bottom: 1px solid var(--navy-light);
 }
 
+/* ── Sail styles ────────────────────────────────────────── */
+.sail-active {
+  border-top: 1px solid var(--navy-light);
+}
+
+.sail-active-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 6px;
+}
+
+.sail-active-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin-bottom: 4px;
+}
+
+.sail-active-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cream);
+}
+
+.sail-log-area {
+  padding: 0 14px 14px;
+}
+
+.sail-start {
+  border-top: 1px solid var(--navy-light);
+  padding: 16px 14px;
+}
+
+.sail-start-label {
+  font-size: 0.84rem;
+  color: var(--cream-dim);
+  margin-bottom: 12px;
+}
+
+.past-sails-section {
+  border-top: 1px solid var(--navy-light);
+  padding: 12px 14px 14px;
+}
+
+.past-sails-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin-bottom: 8px;
+}
+
+.past-sails-list {
+  margin-top: 8px;
+}
+
+.past-sail {
+  background: var(--navy);
+  border: 1px solid var(--navy-light);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.past-sail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.past-sail-log {
+  border-top: 1px solid var(--navy-light);
+  padding: 10px 12px;
+}
+
 /* ── Log entry form ────────────────────────────────────── */
 .log-form {
   background: var(--navy);

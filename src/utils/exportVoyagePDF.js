@@ -71,52 +71,77 @@ export function exportVoyagePDF(voyage) {
   y += 4
   rule(0.5)
 
-  // Log entries
-  line('LOG ENTRIES', 11, true, [11, 25, 41])
-  y += 2
+  // Sails and log entries
+  const sails = voyage.sails || []
+  const totalEntries = sails.reduce((sum, s) => sum + (s.notes || []).length, 0)
 
-  if (!voyage.notes || voyage.notes.length === 0) {
+  if (sails.length === 0 || totalEntries === 0) {
+    line('LOG ENTRIES', 11, true, [11, 25, 41])
+    y += 2
     line('No entries recorded.', 9, false, [120, 120, 120])
   } else {
-    for (const entry of voyage.notes) {
-      if (y > 270) { doc.addPage(); y = 20 }
+    for (let si = 0; si < sails.length; si++) {
+      const sail = sails[si]
+      const sailName = sail.name || `Sail ${si + 1}`
 
-      // Timestamp
-      doc.setFontSize(8)
+      if (y > 260) { doc.addPage(); y = 20 }
+
+      // Sail heading
+      doc.setFillColor(30, 50, 70)
+      doc.rect(margin, y - 3, W - margin * 2, 10, 'F')
+      doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
-      doc.setTextColor(100, 100, 100)
-      doc.text(fmt(entry.time), col, y)
-      y += 5
+      doc.setTextColor(196, 148, 58)
+      doc.text(sailName.toUpperCase(), col + 2, y + 4)
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(180, 180, 180)
+      doc.text(`${fmt(sail.startTime)}${sail.endTime ? '  →  ' + fmt(sail.endTime) : '  (ongoing)'}`, col + 2, y + 9)
+      y += 16
 
-      // Nav data
-      const nav = [
-        entry.lat && entry.lon && `GPS ${entry.lat}  ${entry.lon}`,
-        entry.cog && `COG ${entry.cog}°`,
-        entry.sog && `SOG ${entry.sog} kts`,
-        entry.awa && `AWA ${entry.awa}°`,
-        entry.aws && `AWS ${entry.aws} kts`,
-      ].filter(Boolean).join('   ')
-
-      if (nav) {
-        doc.setFontSize(9)
-        doc.setFont('courier', 'normal')
-        doc.setTextColor(30, 30, 30)
-        const wrapped = doc.splitTextToSize(nav, W - margin * 2)
-        doc.text(wrapped, col, y)
-        y += wrapped.length * 5
+      if (!sail.notes || sail.notes.length === 0) {
+        line('No entries for this sail.', 9, false, [120, 120, 120])
+        y += 4
+        continue
       }
 
-      // Notes text
-      if (entry.text) {
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        doc.setTextColor(50, 50, 50)
-        const wrapped = doc.splitTextToSize(entry.text, W - margin * 2)
-        doc.text(wrapped, col, y)
-        y += wrapped.length * 5
-      }
+      for (const entry of sail.notes) {
+        if (y > 270) { doc.addPage(); y = 20 }
 
-      rule()
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(100, 100, 100)
+        doc.text(fmt(entry.time), col, y)
+        y += 5
+
+        const nav = [
+          entry.lat && entry.lon && `GPS ${entry.lat}  ${entry.lon}`,
+          entry.cog && `COG ${entry.cog}°`,
+          entry.sog && `SOG ${entry.sog} kts`,
+          entry.awa && `AWA ${entry.awa}°`,
+          entry.aws && `AWS ${entry.aws} kts`,
+        ].filter(Boolean).join('   ')
+
+        if (nav) {
+          doc.setFontSize(9)
+          doc.setFont('courier', 'normal')
+          doc.setTextColor(30, 30, 30)
+          const wrapped = doc.splitTextToSize(nav, W - margin * 2)
+          doc.text(wrapped, col, y)
+          y += wrapped.length * 5
+        }
+
+        if (entry.text) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(9)
+          doc.setTextColor(50, 50, 50)
+          const wrapped = doc.splitTextToSize(entry.text, W - margin * 2)
+          doc.text(wrapped, col, y)
+          y += wrapped.length * 5
+        }
+
+        rule()
+      }
     }
   }
 

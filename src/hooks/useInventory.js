@@ -5,7 +5,10 @@
  *   { "comp-1": [{ name, qty, unit, addedAt }], ... }
  *
  * Voyages is an array of voyage objects:
- *   [{ id, name, destination, startTime, endTime, status, notes[] }]
+ *   [{ id, name, destination, startTime, endTime, status, sails[] }]
+ *
+ * Each sail: { id, name, startTime, endTime, status, notes[] }
+ * Each note: { time, lat, lon, cog, sog, awa, aws, text }
  *
  * Both are persisted to localStorage on every change so they survive
  * page reloads and work fully offline.
@@ -26,10 +29,34 @@ function loadInventory() {
 
 }
 
+// Converts legacy voyages (notes[] at voyage level) to new format (sails[]).
+// Safe to run on already-migrated data — voyages with sails pass through unchanged.
+// Active voyages with no entries get no sail so the user sees the "Start Sail" prompt.
+function migrateVoyage(v) {
+  if (v.sails !== undefined) return v
+  const legacyNotes = v.notes || []
+  const { notes, ...rest } = v
+  if (legacyNotes.length === 0) {
+    return { ...rest, sails: [] }
+  }
+  const sailStatus = v.status === 'active' ? 'active' : 'completed'
+  return {
+    ...rest,
+    sails: [{
+      id: v.id,
+      name: 'Sail 1',
+      startTime: v.startTime,
+      endTime: sailStatus === 'completed' ? v.endTime : null,
+      status: sailStatus,
+      notes: legacyNotes,
+    }],
+  }
+}
+
 function loadVoyages() {
   try {
     const raw = localStorage.getItem(VOYAGES_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) return JSON.parse(raw).map(migrateVoyage)
   } catch {}
   return []
 }
@@ -134,7 +161,7 @@ export function useInventory() {
       destination,
       startTime: new Date().toISOString(),
       endTime: null,
-      notes: [],
+      sails: [],
       status: 'active',
     }
     setVoyages(prev => {
@@ -147,18 +174,12 @@ export function useInventory() {
 
   const endVoyage = useCallback((id) => {
     setVoyages(prev => {
-      const next = prev.map(v => v.id === id ? { ...v, endTime: new Date().toISOString(), status: 'completed' } : v)
-      save(VOYAGES_KEY, next)
-      return next
-    })
-  }, [])
-
-  const updateLogEntry = useCallback((voyageId, index, updates) => {
-    setVoyages(prev => {
       const next = prev.map(v => {
-        if (v.id !== voyageId) return v
-        const notes = v.notes.map((n, i) => i === index ? { ...n, ...updates } : n)
-        return { ...v, notes }
+        if (v.id !== id) return v
+        const sails = v.sails.map(s =>
+          s.status === 'active' ? { ...s, status: 'completed', endTime: new Date().toISOString() } : s
+        )
+        return { ...v, sails, endTime: new Date().toISOString(), status: 'completed' }
       })
       save(VOYAGES_KEY, next)
       return next
@@ -175,37 +196,10 @@ export function useInventory() {
 
   const resumeVoyage = useCallback((id) => {
     setVoyages(prev => {
-      // End any currently active voyage first
       const next = prev.map(v => {
         if (v.id === id) return { ...v, status: 'active', endTime: null }
         if (v.status === 'active') return { ...v, status: 'completed', endTime: new Date().toISOString() }
         return v
-      })
-      save(VOYAGES_KEY, next)
-      return next
-    })
-  }, [])
-
-  // entry can be a string (plain note) or object { lat, lon, cog, sog, awa, aws, text }
-  const addLogEntry = useCallback((id, entry) => {
-    const record = typeof entry === 'string'
-      ? { time: new Date().toISOString(), text: entry }
-      : { time: new Date().toISOString(), ...entry }
-    setVoyages(prev => {
-      const next = prev.map(v =>
-        v.id === id ? { ...v, notes: [...v.notes, record] } : v
-      )
-      save(VOYAGES_KEY, next)
-      return next
-    })
-  }, [])
-
-  const deleteLogEntry = useCallback((voyageId, index) => {
-    setVoyages(prev => {
-      const next = prev.map(v => {
-        if (v.id !== voyageId) return v
-        const notes = v.notes.filter((_, i) => i !== index)
-        return { ...v, notes }
       })
       save(VOYAGES_KEY, next)
       return next
@@ -220,11 +214,155 @@ export function useInventory() {
     })
   }, [])
 
-  const addVoyageNote = useCallback((id, text) => addLogEntry(id, text), [addLogEntry])
+  // ── Sails ──────────────────────────────────────────────
+
+  const startSail = useCallback((voyageId, name = '') => {
+    const sail = {
+      id: Date.now(),
+      name,
+      startTime: new Date().toISOString(),
+      endTime: null,
+      status: 'active',
+      notes: [],
+    }
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s =>
+          s.status === 'active' ? { ...s, status: 'completed', endTime: new Date().toISOString() } : s
+        )
+        return { ...v, sails: [...sails, sail] }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+    return sail.id
+  }, [])
+
+  const endSail = useCallback((voyageId, sailId) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s =>
+          s.id === sailId ? { ...s, status: 'completed', endTime: new Date().toISOString() } : s
+        )
+        return { ...v, sails }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  const renameSail = useCallback((voyageId, sailId, name) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s => s.id === sailId ? { ...s, name } : s)
+        return { ...v, sails }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  const deleteSail = useCallback((voyageId, sailId) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        return { ...v, sails: v.sails.filter(s => s.id !== sailId) }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  // ── Log Entries ──────────────────────────────────────────────
+
+  // entry can be a string (plain note) or object { lat, lon, cog, sog, awa, aws, text }
+  const addLogEntry = useCallback((voyageId, sailId, entry) => {
+    const record = typeof entry === 'string'
+      ? { time: new Date().toISOString(), text: entry }
+      : { time: new Date().toISOString(), ...entry }
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s =>
+          s.id === sailId ? { ...s, notes: [...s.notes, record] } : s
+        )
+        return { ...v, sails }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  const updateLogEntry = useCallback((voyageId, sailId, index, updates) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s => {
+          if (s.id !== sailId) return s
+          const notes = s.notes.map((n, i) => i === index ? { ...n, ...updates } : n)
+          return { ...s, notes }
+        })
+        return { ...v, sails }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  const deleteLogEntry = useCallback((voyageId, sailId, index) => {
+    setVoyages(prev => {
+      const next = prev.map(v => {
+        if (v.id !== voyageId) return v
+        const sails = v.sails.map(s => {
+          if (s.id !== sailId) return s
+          const notes = s.notes.filter((_, i) => i !== index)
+          return { ...s, notes }
+        })
+        return { ...v, sails }
+      })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
+
+  // For voice commands — finds active sail or auto-creates one
+  const addVoyageNote = useCallback((voyageId, text) => {
+    setVoyages(prev => {
+      const voyage = prev.find(v => v.id === voyageId)
+      if (!voyage) return prev
+      const record = { time: new Date().toISOString(), text }
+      const activeSail = voyage.sails.find(s => s.status === 'active')
+      if (activeSail) {
+        const next = prev.map(v => {
+          if (v.id !== voyageId) return v
+          const sails = v.sails.map(s =>
+            s.id === activeSail.id ? { ...s, notes: [...s.notes, record] } : s
+          )
+          return { ...v, sails }
+        })
+        save(VOYAGES_KEY, next)
+        return next
+      }
+      const newSail = {
+        id: Date.now(),
+        name: `Sail ${voyage.sails.length + 1}`,
+        startTime: new Date().toISOString(),
+        endTime: null,
+        status: 'active',
+        notes: [record],
+      }
+      const next = prev.map(v => v.id !== voyageId ? v : { ...v, sails: [...v.sails, newSail] })
+      save(VOYAGES_KEY, next)
+      return next
+    })
+  }, [])
 
   const importData = useCallback((inv, voy) => {
     if (inv) { setInventory(inv); save(STORAGE_KEY, inv) }
-    if (voy) { setVoyages(voy);   save(VOYAGES_KEY, voy) }
+    if (voy) { setVoyages(voy.map(migrateVoyage)); save(VOYAGES_KEY, voy.map(migrateVoyage)) }
   }, [])
 
   const activeVoyage = voyages.find(v => v.status === 'active') || null
@@ -243,11 +381,15 @@ export function useInventory() {
     endVoyage,
     resumeVoyage,
     renameVoyage,
-    updateLogEntry,
-    importData,
-    addVoyageNote,
+    startSail,
+    endSail,
+    renameSail,
+    deleteSail,
     addLogEntry,
+    updateLogEntry,
     deleteLogEntry,
+    addVoyageNote,
     deleteVoyage,
+    importData,
   }
 }

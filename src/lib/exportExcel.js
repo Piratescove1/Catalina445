@@ -38,23 +38,37 @@ function makeLockersSheet(lockerInventory) {
 }
 
 function makeVoyageSheet(voyages) {
-  const rows = [['Voyage', 'Status', 'Start', 'End', 'Time', 'Log Entry', 'Lat', 'Lon', 'COG', 'SOG', 'AWA', 'AWS']]
+  const rows = [['Voyage', 'Sail', 'Status', 'Start', 'End', 'Time', 'Log Entry', 'Lat', 'Lon', 'COG', 'SOG', 'AWA', 'AWS']]
   for (const v of voyages) {
-    const name = v.name || v.destination || '(unnamed)'
-    if (!v.notes || v.notes.length === 0) {
-      rows.push([name, v.status, fmt(v.startTime), fmt(v.endTime), '', '', '', '', '', '', '', ''])
-    } else {
-      for (let i = 0; i < v.notes.length; i++) {
-        const n = v.notes[i]
+    const vName = v.name || v.destination || '(unnamed)'
+    const sails = v.sails || []
+    if (sails.length === 0) {
+      rows.push([vName, '', v.status, fmt(v.startTime), fmt(v.endTime), '', '', '', '', '', '', '', ''])
+      continue
+    }
+    let firstVoyageRow = true
+    for (let si = 0; si < sails.length; si++) {
+      const sail = sails[si]
+      const sailName = sail.name || `Sail ${si + 1}`
+      const notes = sail.notes || []
+      if (notes.length === 0) {
+        rows.push([firstVoyageRow ? vName : '', sailName, sail.status, fmt(sail.startTime), fmt(sail.endTime), '', '', '', '', '', '', '', ''])
+        firstVoyageRow = false
+        continue
+      }
+      for (let i = 0; i < notes.length; i++) {
+        const n = notes[i]
         rows.push([
-          i === 0 ? name : '',
-          i === 0 ? v.status : '',
-          i === 0 ? fmt(v.startTime) : '',
-          i === 0 ? fmt(v.endTime) : '',
+          firstVoyageRow && i === 0 ? vName : '',
+          i === 0 ? sailName : '',
+          firstVoyageRow && i === 0 ? v.status : '',
+          firstVoyageRow && i === 0 ? fmt(v.startTime) : '',
+          firstVoyageRow && i === 0 ? fmt(v.endTime) : '',
           fmt(n.time),
           n.text || '',
           n.lat ?? '', n.lon ?? '', n.cog ?? '', n.sog ?? '', n.awa ?? '', n.aws ?? '',
         ])
+        if (i === 0) firstVoyageRow = false
       }
     }
   }
